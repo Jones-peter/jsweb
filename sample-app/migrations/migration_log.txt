@@ -1,2 +1,0 @@
-001_initial_db.sql
-002_initial_db1.sql
