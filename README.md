@@ -10,7 +10,7 @@
 
 [![Discord](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/discord.svg)](https://discord.gg/sQHNheEW)
 [![Documentation](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/documentation_learn.svg)](https://jsweb-framework.site)
-[![Sponsor](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/github_sponsor.svg)](https://www.paypal.com/paypalme/jonespeter22)
+[![Sponsor](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/github_sponsor.svg)](https://github.com/sponsors/Jones-peter)
 
 
 # JsWeb: A Lightweight Python Web Framework
