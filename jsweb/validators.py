@@ -1,5 +1,4 @@
 import re
-from brazilian import CPF, CEP, CNPJ
 
 class ValidationError(Exception):
     """Raised when a validator fails to validate its input."""
@@ -125,30 +124,3 @@ class FileSize:
                 min_kb = self.min_size / 1024
                 message = f"File size is below minimum required size of {min_kb:.2f} KB."
             raise ValidationError(message)
-
-class CPF:
-    """Checks for a valid Brazilian CPF number."""
-    def __init__(self, message="Invalid CPF number."):
-        self.message = message
-
-    def __call__(self, form, field):
-        if not is_valid_cpf(field.data):
-            raise ValidationError(self.message)
-
-class CNPJ:
-    """Checks for a valid Brazilian CNPJ number."""
-    def __init__(self, message="Invalid CNPJ number."):
-        self.message = message
-
-    def __call__(self, form, field):
-        if not is_valid_cnpj(field.data):
-            raise ValidationError(self.message)
-
-class CEP:
-    """Checks for a valid Brazilian CEP (Zip Code) number."""
-    def __init__(self, message="Invalid CEP number."):
-        self.message = message
-
-    def __call__(self, form, field):
-        if not is_valid_cep(field.data):
-            raise ValidationError(self.message)
