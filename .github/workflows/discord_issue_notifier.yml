@@ -1,0 +1,39 @@
+# .github/workflows/discord_issue_notifier.yml
+
+name: Discord Issue Notifier
+
+# This action will only trigger when a new issue is "opened".
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify:
+    name: Send Issue Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Issue Info to Discord
+        env:
+          # We securely access the same webhook URL from the GitHub secret.
+          DISCORD_WEBHOOK_URL_2: ${{ secrets.DISCORD_WEBHOOK_URL_2 }}
+        run: |
+          # This curl command sends a new embed, formatted for issues.
+          curl -X POST "$DISCORD_WEBHOOK_URL_2" \
+               -H "Content-Type: application/json" \
+               -d @- << EOF
+          {
+            "username": "GitHub Issues",
+            "avatar_url": "https://github.com/github.png",
+            "embeds": [
+              {
+                "title": "🛠️ New Issue #${{ github.event.issue.number }}: ${{ github.event.issue.title }}",
+                "url": "${{ github.event.issue.html_url }}",
+                "description": "Opened by **${{ github.event.issue.user.login }}**. Click the title to view the full issue.",
+                "color": 15158332,
+                "footer": {
+                  "text": "JsWeb Framework"
+                }
+              }
+            ]
+          }
+          EOF

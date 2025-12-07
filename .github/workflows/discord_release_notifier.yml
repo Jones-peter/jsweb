@@ -22,8 +22,8 @@ jobs:
                -H "Content-Type: application/json" \
                -d @- << EOF
           {
-            "username": "JsWeb Releases",
-            "avatar_url": "https://github.com/Jones-peter/jsweb/blob/main/images/jsweb_logo_bg.png?raw=true",
+            "username": "Github Releases",
+            "avatar_url": "https://github.com/github.png",
             "embeds": [
               {
                 "title": "🚀 New Release: ${{ github.event.release.name }}",

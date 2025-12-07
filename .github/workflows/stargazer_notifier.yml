@@ -1,0 +1,46 @@
+# .github/workflows/stargazer_notifier.yml
+
+name: Discord Stargazer Notifier
+
+# This action triggers when someone stars the repository.
+on:
+  watch:
+    types: [started]
+
+jobs:
+  notify:
+    name: Send Star Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Star Info to Discord
+        env:
+          DISCORD_WEBHOOK_URL_3: ${{ secrets.DISCORD_WEBHOOK_URL_3 }}
+          SENDER_LOGIN: ${{ github.event.sender.login }}
+          SENDER_URL: ${{ github.event.sender.html_url }}
+          REPO_NAME: ${{ github.repository }}
+          STAR_COUNT: ${{ github.event.repository.stargazers_count }}
+        run: |
+          # Use jq to safely build the JSON payload.
+          json_payload=$(jq -n \
+            --arg username "New Star!" \
+            --arg avatar_url "https://github.com/github.png" \
+            --arg description "[$SENDER_LOGIN]($SENDER_URL) just starred **$REPO_NAME**!" \
+            --arg star_count "$STAR_COUNT" \
+            '{
+              "username": $username,
+              "avatar_url": $avatar_url,
+              "embeds": [
+                {
+                  "title": "🌟 New Star!",
+                  "description": $description,
+                  "color": 16705372,
+                  "footer": {
+                    "text": "Total Stars: \($star_count)"
+                  }
+                }
+              ]
+            }')
+          
+          curl -X POST "$DISCORD_WEBHOOK_URL_3" \
+               -H "Content-Type: application/json" \
+               -d "$json_payload"
