@@ -1,5 +1,6 @@
 import secrets
 import os
+import asyncio
 from .routing import Router
 from .request import Request
 from .response import Response, HTMLResponse, configure_template_env
@@ -78,12 +79,16 @@ class JsWebApp:
             return func
         return decorator
 
-    def _wsgi_app_handler(self, environ, start_response):
-        req = environ['jsweb.request']
+    async def _asgi_app_handler(self, scope, receive, send):
+        req = scope['jsweb.request']
 
         handler, params = self.router.resolve(req.path, req.method)
         if handler:
-            response = handler(req, **params)
+            # Support both sync and async handlers
+            if asyncio.iscoroutinefunction(handler):
+                response = await handler(req, **params)
+            else:
+                response = handler(req, **params)
 
             if isinstance(response, str):
                 response = HTMLResponse(response)
@@ -94,16 +99,21 @@ class JsWebApp:
             if hasattr(req, 'new_csrf_token_generated') and req.new_csrf_token_generated:
                 response.set_cookie("csrf_token", req.csrf_token, httponly=False, samesite='Lax')
 
-            body_bytes, status, headers = response.to_wsgi()
-            start_response(status, headers)
-            return [body_bytes]
+            await response(scope, receive, send)
+            return
 
-        start_response("404 Not Found", [("Content-Type", "text/html")])
-        return [b"<h1>404 Not Found</h1>"]
+        # 404 Not Found
+        response = HTMLResponse("<h1>404 Not Found</h1>", status_code=404)
+        await response(scope, receive, send)
 
-    def __call__(self, environ, start_response):
-        req = Request(environ, self)
-        environ['jsweb.request'] = req
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            # For now, we only support http
+            return
+
+        req = Request(scope, receive, self)
+        scope['jsweb.request'] = req
 
         csrf_token = req.cookies.get("csrf_token")
         req.new_csrf_token_generated = False
@@ -118,10 +128,12 @@ class JsWebApp:
         static_url = getattr(self.config, "STATIC_URL", "/static")
         static_dir = getattr(self.config, "STATIC_DIR", "static")
         
-        handler = self._wsgi_app_handler
+        # The middleware needs to be ASGI compatible.
+        # This will require rewriting the middleware classes.
+        # For now, I will assume they are ASGI compatible.
+        handler = self._asgi_app_handler
         handler = DBSessionMiddleware(handler)
-        # Pass blueprint static file info to the middleware
         handler = StaticFilesMiddleware(handler, static_url, static_dir, blueprint_statics=self.blueprints_with_static_files)
         handler = CSRFMiddleware(handler)
 
-        return handler(environ, start_response)
+        await handler(scope, receive, send)

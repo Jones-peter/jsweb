@@ -10,11 +10,13 @@
     --muted-text: #6B7280;
     --border-color: #E5E7EB;
     --shadow-color: rgba(0, 0, 0, 0.05);
-    /* --sidebar-bg: #212529; */
-    --sidebar-bg: #FFFFFF; /* White background for sidebar */
-    --sidebar-link: #4B5563; /* Darker text for links */
+    --sidebar-bg: #FFFFFF;
+    --sidebar-link: #4B5563;
     --sidebar-link-hover: var(--primary-green);
     --sidebar-link-active: var(--primary-green);
+    --btn-secondary-bg: #F3F4F6;
+    --btn-secondary-text: #374151;
+    --btn-secondary-hover-bg: #E5E7EB;
 }
 
 body {
@@ -46,7 +48,7 @@ body {
 .sidebar-header {
     text-align: center;
     margin-bottom: 2.5rem;
-    height: 40px; /* Set a fixed height */
+    height: 40px;
 }
 
 .logo-full {
@@ -102,7 +104,7 @@ body {
 }
 
 .sidebar nav a.active {
-    background-color: #E9F5E3; /* Light green background for active link */
+    background-color: #E9F5E3;
     color: var(--primary-green-dark);
     font-weight: 600;
 }
@@ -123,7 +125,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.5rem; /* Reduced side padding */
+    padding: 1rem 1.5rem;
     background-color: var(--surface-color);
     border-bottom: 1px solid var(--border-color);
 }
@@ -145,12 +147,12 @@ body {
 
 main {
     flex-grow: 1;
-    padding: 2rem 1.5rem; /* Reduced side padding */
+    padding: 2rem 1.5rem;
     overflow-y: auto;
 }
 
 .footer {
-    padding: 1rem 1.5rem; /* Reduced side padding */
+    padding: 1rem 1.5rem;
     background-color: var(--surface-color);
     border-top: 1px solid var(--border-color);
     text-align: center;
@@ -163,7 +165,6 @@ main {
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 1.2rem;
-    background-color: var(--primary-green);
     color: #fff;
     text-decoration: none;
     border-radius: 6px;
@@ -173,9 +174,22 @@ main {
     transition: background-color 0.2s ease;
 }
 
-.btn:hover {
+.btn-primary {
+    background-color: var(--primary-green);
+}
+.btn-primary:hover {
     background-color: var(--primary-green-dark);
 }
+
+.btn-secondary {
+    background-color: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+    background-color: var(--btn-secondary-hover-bg);
+}
+
 
 .card {
     background: var(--surface-color);
@@ -224,7 +238,7 @@ table.dataTable td, table.dataTable th {
     color: var(--primary-green);
 }
 
-/* Modal styles */
+/* --- Modal Styles --- */
 .modal {
     display: none;
     position: fixed;
@@ -233,38 +247,40 @@ table.dataTable td, table.dataTable th {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    outline: 0;
+    overflow-y: auto;
     background-color: rgba(0,0,0,0.5);
+    -webkit-animation: fadeIn 0.3s;
+    animation: fadeIn 0.3s;
 }
 
 .modal-content {
     position: relative;
-    margin: 1.75rem auto;
+    margin: 5% auto;
     pointer-events: auto;
     background-color: #fff;
     background-clip: padding-box;
     border: 1px solid rgba(0,0,0,.2);
-    border-radius: 0.3rem;
+    border-radius: 12px;
     outline: 0;
-    max-width: 500px;
+    max-width: 600px;
+    box-shadow: 0 5px 15px rgba(0,0,0,.5);
+    -webkit-animation: slideIn 0.3s;
+    animation: slideIn 0.3s;
 }
 
 .modal-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
-    padding: 1rem 1rem;
-    border-bottom: 1px solid #dee2e6;
-    border-top-left-radius: calc(0.3rem - 1px);
-    border-top-right-radius: calc(0.3rem - 1px);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .modal-title {
     margin-bottom: 0;
     line-height: 1.5;
     font-size: 1.25rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .close {
@@ -277,33 +293,76 @@ table.dataTable td, table.dataTable th {
     background-color: transparent;
     border: 0;
     cursor: pointer;
+    padding: 0;
+}
+.close:hover {
+    opacity: .75;
 }
 
 .modal-body {
     position: relative;
     flex: 1 1 auto;
-    padding: 1rem;
+    padding: 1.5rem;
 }
 
-.modal-form .form-group {
-    margin-bottom: 1rem;
+/* --- Form Styles (used in both modal and full-page forms) --- */
+.styled-form .form-group {
+    margin-bottom: 1.25rem;
 }
 
-.modal-form .form-input {
+.styled-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark-text);
+}
+
+.styled-form .form-input {
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.75rem 1rem;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.styled-form .form-input:focus {
+    border-color: var(--primary-green);
+    box-shadow: 0 0 0 3px rgba(108, 190, 33, 0.2);
+    outline: none;
 }
 
-.modal-form .error-list {
+.styled-form .error-list {
     color: #dc3545;
     font-size: 0.875rem;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
 }
 
-.modal-form .form-actions {
-    text-align: right;
-    margin-top: 1.5rem;
+.styled-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* --- Animation Keyframes --- */
+@-webkit-keyframes fadeIn {
+  from {opacity: 0}
+  to {opacity: 1}
+}
+
+@keyframes fadeIn {
+  from {opacity: 0}
+  to {opacity: 1}
+}
+
+@-webkit-keyframes slideIn {
+  from {transform: translateY(-50px); opacity: 0}
+  to {transform: translateY(0); opacity: 1}
+}
+
+@keyframes slideIn {
+  from {transform: translateY(-50px); opacity: 0}
+  to {transform: translateY(0); opacity: 1}
 }

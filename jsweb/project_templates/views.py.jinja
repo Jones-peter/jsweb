@@ -1,13 +1,15 @@
 from jsweb import Blueprint, render, __VERSION__, login_required, url_for
+from jsweb.security import never_cache
 
 # A blueprint for the main site pages
 views_bp = Blueprint('views')
 
 @views_bp.route("/", methods=["GET", "POST"], endpoint="home")
-def home(req):
+async def home(req):
     message = ""
     if req.method == "POST":
-        message = f"Received a POST request with data: {req.form.get('test_input', 'N/A')}"
+        form_data = await req.form()
+        message = f"Received a POST request with data: {form_data.get('test_input', 'N/A')}"
     
     context = {
         "name": req.app.config.APP_NAME, 
@@ -20,5 +22,6 @@ def home(req):
 
 @views_bp.route("/profile", endpoint="profile")
 @login_required
+@never_cache
 def profile(req):
     return render(req, "profile.html", {"req": req, "app": req.app, "library_version": __VERSION__})

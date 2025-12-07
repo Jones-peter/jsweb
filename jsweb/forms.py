@@ -1,13 +1,37 @@
 from .validators import ValidationError
+from markupsafe import Markup
+
+class Label:
+    """A smart label that knows how to render itself."""
+    def __init__(self, field_id, text):
+        self.field_id = field_id
+        self.text = text
+
+    def __html__(self):
+        """
+        Called by Jinja2 when rendering. Returns the full HTML for the label.
+        e.g., <label for="username">Username</label>
+        """
+        return Markup(f'<label for="{self.field_id}">{self.text}</label>')
+
+    def __str__(self):
+        return self.__html__()
 
 class Field:
     """A single field in a form."""
     def __init__(self, label=None, validators=None, default=""):
-        self.label = label
+        # The label text is stored, but the `label` property will be a Label object.
+        self._label_text = label
         self.validators = validators or []
         self.data = None
         self.default = default
         self.errors = []
+        self.name = None  # This will be set by the Form class
+
+    @property
+    def label(self):
+        """Returns a renderable Label object."""
+        return Label(self.name, self._label_text or self.name.replace('_', ' ').title())
 
     def validate(self, form):
         """Validate the field by running all its validators."""
@@ -30,7 +54,8 @@ class Field:
             kwargs.setdefault('value', self.default)
         
         attributes = ' '.join(f'{key}="{value}"' for key, value in kwargs.items())
-        return f'<input {attributes}>'
+        # Mark the output as safe HTML for Jinja2's auto-escaping.
+        return Markup(f'<input {attributes}>')
 
 class StringField(Field):
     pass
@@ -62,7 +87,7 @@ class FileField(Field):
         kwargs.pop('value', None)
 
         attributes = ' '.join(f'{key}="{value}"' for key, value in kwargs.items())
-        return f'<input {attributes}>'
+        return Markup(f'<input {attributes}>')
 
 class Form:
     """A collection of fields that can be validated together."""
@@ -75,7 +100,7 @@ class Form:
         for name in dir(self):
             if isinstance(getattr(self, name), Field):
                 field = getattr(self, name)
-                field.name = name
+                field.name = name  # Set the field's name
                 self._fields[name] = field
                 # Populate field data from formdata or files if available
                 if isinstance(field, FileField):

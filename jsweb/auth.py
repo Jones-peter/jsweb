@@ -1,4 +1,5 @@
 from functools import wraps
+import asyncio
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
 from .response import redirect, url_for, Forbidden
 
@@ -37,25 +38,34 @@ def get_current_user(request):
 def login_required(handler):
     """
     A decorator to protect routes from unauthenticated access.
-    If the user is not logged in, it redirects to the URL for the 'auth.login' endpoint.
+    It supports both sync and async handlers.
     """
     @wraps(handler)
-    def decorated_function(request, *args, **kwargs):
+    async def decorated_function(request, *args, **kwargs):
         if not request.user:
-            # Use url_for to dynamically find the login page
             login_url = url_for(request, 'auth.login')
             return redirect(login_url)
-        return handler(request, *args, **kwargs)
+        
+        # Await the handler if it's a coroutine function
+        if asyncio.iscoroutinefunction(handler):
+            return await handler(request, *args, **kwargs)
+        else:
+            return handler(request, *args, **kwargs)
     return decorated_function
 
 def admin_required(handler):
     """
     A decorator to protect routes from non-admin access.
-    If the user is not logged in or not an admin, it redirects to the admin login page.
+    It supports both sync and async handlers.
     """
     @wraps(handler)
-    def decorated_function(request, *args, **kwargs):
+    async def decorated_function(request, *args, **kwargs):
         if not request.user or not getattr(request.user, 'is_admin', False):
             return redirect(url_for(request, 'admin.index'))
-        return handler(request, *args, **kwargs)
+        
+        # Await the handler if it's a coroutine function
+        if asyncio.iscoroutinefunction(handler):
+            return await handler(request, *args, **kwargs)
+        else:
+            return handler(request, *args, **kwargs)
     return decorated_function

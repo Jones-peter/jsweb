@@ -3,11 +3,11 @@
 import os
 import mimetypes
 from typing import Tuple, List, Union
-
+from .response import Response, HTMLResponse
 
 def serve_static(
     request_path: str, static_url: str, static_dir: str
-) -> Tuple[Union[bytes, str], str, List[Tuple[str, str]]]:
+) -> Response:
     """
     Serves a static file from the configured static directory with enhanced
     security and path handling.
@@ -18,13 +18,13 @@ def serve_static(
         static_dir: The local directory where static files are stored (e.g., 'static').
 
     Returns:
-        A tuple containing the file content, status, and headers.
+        A Response object.
     """
     # 1. More robustly calculate the relative path of the requested file
     # This avoids complex string replacement and is easier to read.
     if not request_path.startswith(static_url):
         # This case shouldn't happen if called from app.py, but it's a good safeguard.
-        return b"404 Not Found", "404 Not Found", [("Content-Type", "text/plain")]
+        return HTMLResponse("404 Not Found", status_code=404)
 
     relative_path = request_path[len(static_url) :].lstrip("/")
 
@@ -37,11 +37,11 @@ def serve_static(
     # This is the most important security step. It ensures the final, normalized
     # path is still safely inside the designated static directory.
     if not full_path.startswith(base_dir):
-        return b"403 Forbidden", "403 Forbidden", [("Content-Type", "text/plain")]
+        return HTMLResponse("403 Forbidden", status_code=403)
 
     # 4. Check if the path points to an actual file (not a directory)
     if not os.path.isfile(full_path):
-        return b"404 Not Found", "404 Not Found", [("Content-Type", "text/plain")]
+        return HTMLResponse("404 Not Found", status_code=404)
 
     # 5. Read the file and determine its MIME type
     try:
@@ -49,13 +49,8 @@ def serve_static(
             content = f.read()
     except IOError:
         # This can happen due to file permission errors.
-        return (
-            b"500 Internal Server Error",
-            "500 Internal Server Error",
-            [("Content-Type", "text/plain")],
-        )
+        return HTMLResponse("500 Internal Server Error", status_code=500)
 
     content_type = mimetypes.guess_type(full_path)[0] or "application/octet-stream"
-    headers = [("Content-Type", content_type)]
-
-    return content, "200 OK", headers
+    
+    return Response(content, status_code=200, content_type=content_type)

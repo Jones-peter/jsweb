@@ -56,7 +56,7 @@ JsWeb is a minimalistic yet powerful Python web framework designed for developer
 
 ### Contributors
 <a href="https://github.com/jones-peter/jsweb/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=jones-peter/jsweb" />
+  <img src="https://contrib.rocks/image?repo=jones-peter/jsweb&v=2" />
 </a>
 
 ## Installation

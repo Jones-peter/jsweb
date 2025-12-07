@@ -7,8 +7,8 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <span>{{ model_name }}s</span>
-            <a href="#" id="add-new-btn" class="btn"><i class="fas fa-plus"></i> Add New</a>
+            <span>{{ model_name }} Records</span>
+            <a href="#" id="add-new-btn" class="btn btn-primary"><i class="fas fa-plus"></i> Add New</a>
         </div>
         <div class="card-body">
             <table id="model-table" class="display datatable">
@@ -27,7 +27,7 @@
                                 <td>{{ record[column] }}</td>
                             {% endfor %}
                             <td class="action-buttons">
-                                <a href="#" class="edit-btn" data-id="{{ record[pk_name] }}"><i class="fas fa-edit"></i></a>
+                                <a href="{{ url_for('admin.' + model_name|lower + '_edit', **{pk_name: record[pk_name]}) }}" class="edit-btn"><i class="fas fa-edit"></i></a>
                                 <a href="#" class="delete-btn" data-id="{{ record[pk_name] }}"><i class="fas fa-trash-alt"></i></a>
                                 <form id="delete-form-{{ record[pk_name] }}" action="{{ url_for('admin.' + model_name|lower + '_delete', **{pk_name: record[pk_name]}) }}" method="post" style="display: none;">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -44,17 +44,36 @@
         </div>
     </div>
 
-    <!-- Modal for Add/Edit Form -->
-    <div id="form-modal" class="modal">
+    <!-- Modal for the Add New form -->
+    <div id="add-form-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add/Edit {{ model_name }}</h5>
+                <h5 class="modal-title">Add New {{ model_name }}</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div id="form-container"></div>
+                <form method="post" class="styled-form" action="{{ url_for('admin.' + model_name|lower + '_add') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    {% for name, field in add_form._fields.items() %}
+                        <div class="form-group">
+                            <label for="{{ name }}">{{ field.label }}</label>
+                            {{ field(class="form-input") }}
+                            {% if field.errors %}
+                                <div class="error-list">
+                                    {% for error in field.errors %}
+                                        <span>{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary close">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -63,33 +82,40 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        var modal = $('#form-modal');
+        var modal = $('#add-form-modal');
 
-        function showModal(url) {
-            $.get(url, function(data) {
-                $('#form-container').html(data);
-                modal.show();
-            });
+        function showModal() {
+            modal.show();
         }
+
+        function hideModal() {
+            modal.hide();
+        }
+
+        // --- Event Listeners ---
 
         $('#add-new-btn').on('click', function(e) {
             e.preventDefault();
-            showModal("{{ url_for('admin.' + model_name|lower + '_add') }}");
+            showModal();
         });
 
-        $('.edit-btn').on('click', function(e) {
-            e.preventDefault();
-            var recordId = $(this).data('id');
-            showModal("{{ url_for('admin.' + model_name|lower + '_edit', **{pk_name: 0}) }}".replace('0', recordId));
+        modal.on('click', '.close', function() {
+            hideModal();
         });
 
-        $('.close, .modal').on('click', function(e) {
-            if ($(e.target).is('.modal, .close, .close span')) {
-                modal.hide();
+        modal.on('click', function(e) {
+            if ($(e.target).is(modal)) {
+                hideModal();
             }
         });
 
-        $('.delete-btn').on('click', function(e) {
+        $(document).on('keydown', function(e) {
+            if (e.key === "Escape" && modal.is(':visible')) {
+                hideModal();
+            }
+        });
+
+        $('#model-table').on('click', '.delete-btn', function(e) {
             e.preventDefault();
             var recordId = $(this).data('id');
             Swal.fire({
@@ -106,6 +132,12 @@
                 }
             });
         });
+
+        // If the add_form has errors, it means a POST to add failed.
+        // In this case, we should show the modal immediately so the user can see the errors.
+        {% if add_form.errors %}
+            showModal();
+        {% endif %}
     });
 </script>
 {% endblock %}

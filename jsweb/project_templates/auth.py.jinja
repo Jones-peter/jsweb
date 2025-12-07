@@ -15,9 +15,10 @@ from forms import RegistrationForm, LoginForm
 auth_bp = Blueprint('auth')
 
 @auth_bp.route("/register", methods=["GET", "POST"], endpoint="register")
-def register(req):
+async def register(req):
     from app import app
-    form = RegistrationForm(req.form)
+    form_data = await req.form() if req.method == "POST" else {}
+    form = RegistrationForm(form_data)
     if req.method == "POST" and form.validate():
         if models.User.query.filter_by(username=form.username.data).first():
             form.username.errors.append("Username already taken.")
@@ -33,9 +34,10 @@ def register(req):
     return render(req, "register.html", {"form": form, "req": req, "app": app, "library_version": __VERSION__})
 
 @auth_bp.route("/login", methods=["GET", "POST"], endpoint="login")
-def login(req):
+async def login(req):
     from app import app
-    form = LoginForm(req.form)
+    form_data = await req.form() if req.method == "POST" else {}
+    form = LoginForm(form_data)
     if req.method == "POST" and form.validate():
         user = models.User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):

@@ -1,7 +1,6 @@
 import secrets
 import logging
 from .static import serve_static
-from .database import db_session
 from .response import Forbidden
 
 logger = logging.getLogger(__name__)
@@ -10,26 +9,30 @@ class Middleware:
     def __init__(self, app):
         self.app = app
 
-    def __call__(self, environ, start_response):
-        return self.app(environ, start_response)
+    async def __call__(self, scope, receive, send):
+        await self.app(scope, receive, send)
 
 class CSRFMiddleware(Middleware):
     """Middleware to protect against Cross-Site Request Forgery attacks."""
-    def __call__(self, environ, start_response):
-        req = environ['jsweb.request']
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        req = scope['jsweb.request']
 
         if req.method in ("POST", "PUT", "PATCH", "DELETE"):
-            form_token = req.form.get("csrf_token")
+            form = await req.form()
+            form_token = form.get("csrf_token")
             cookie_token = req.cookies.get("csrf_token")
 
             if not form_token or not cookie_token or not secrets.compare_digest(form_token, cookie_token):
                 logger.error("CSRF VALIDATION FAILED. Tokens do not match or are missing.")
                 response = Forbidden("CSRF token missing or invalid.")
-                body_bytes, status, headers = response.to_wsgi()
-                start_response(status, headers)
-                return [body_bytes]
+                await response(scope, receive, send)
+                return
 
-        return self.app(environ, start_response)
+        await self.app(scope, receive, send)
 
 class StaticFilesMiddleware(Middleware):
     def __init__(self, app, static_url, static_dir, blueprint_statics=None):
@@ -38,30 +41,38 @@ class StaticFilesMiddleware(Middleware):
         self.static_dir = static_dir
         self.blueprint_statics = blueprint_statics or []
 
-    def __call__(self, environ, start_response):
-        req = environ['jsweb.request']
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        req = scope['jsweb.request']
         
         # Check blueprint static files first
         for bp in self.blueprint_statics:
             if bp.static_url_path and req.path.startswith(bp.static_url_path):
-                content, status, headers = serve_static(req.path, bp.static_url_path, bp.static_folder)
-                start_response(status, headers)
-                return [content if isinstance(content, bytes) else content.encode("utf-8")]
+                response = serve_static(req.path, bp.static_url_path, bp.static_folder)
+                await response(scope, receive, send)
+                return
 
         # Fallback to main static files
         if req.path.startswith(self.static_url):
-            content, status, headers = serve_static(req.path, self.static_url, self.static_dir)
-            start_response(status, headers)
-            return [content if isinstance(content, bytes) else content.encode("utf-8")]
+            response = serve_static(req.path, self.static_url, self.static_dir)
+            await response(scope, receive, send)
+            return
             
-        return self.app(environ, start_response)
+        await self.app(scope, receive, send)
 
 class DBSessionMiddleware(Middleware):
-    def __call__(self, environ, start_response):
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+            
+        from .database import db_session
         try:
-            response = self.app(environ, start_response)
+            await self.app(scope, receive, send)
             db_session.commit()
-            return response
         except Exception:
             db_session.rollback()
             raise

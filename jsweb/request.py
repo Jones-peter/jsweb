@@ -1,72 +1,79 @@
 from urllib.parse import parse_qs
 import json
+import asyncio
 from io import BytesIO
 from werkzeug.formparser import parse_form_data
-from werkzeug.datastructures import FileStorage
 
 class Request:
-    def __init__(self, environ, app):
-        self.environ = environ
-        self.app = app  # Store a reference to the app instance
-        self.method = self.environ.get("REQUEST_METHOD", "GET").upper()
-        self.path = self.environ.get("PATH_INFO", "/")
-        self.query = self._parse_query(self.environ.get("QUERY_STRING", ""))
-        self.headers = self._parse_headers(self.environ)
-        self.cookies = self._parse_cookies(self.environ)
-        self.user = None  # Will be populated by the app
+    def __init__(self, scope, receive, app):
+        self.scope = scope
+        self.receive = receive
+        self.app = app
+        self.method = self.scope.get("method", "GET").upper()
+        self.path = self.scope.get("path", "/")
+        self.query = self._parse_query(self.scope.get("query_string", b"").decode())
+        self.headers = self._parse_headers(self.scope.get("headers", []))
+        self.cookies = self._parse_cookies(self.headers)
+        self.user = None
 
         self._body = None
         self._form = None
         self._json = None
         self._files = None
+        self._is_stream_consumed = False
 
-    @property
-    def body(self):
+    async def stream(self):
+        if self._is_stream_consumed:
+            raise RuntimeError("Stream has already been consumed.")
+        
+        while True:
+            chunk = await self.receive()
+            yield chunk.get("body", b"")
+            if not chunk.get("more_body", False):
+                break
+        self._is_stream_consumed = True
+
+    async def body(self):
         if self._body is None:
-            try:
-                length = int(self.environ.get("CONTENT_LENGTH", 0))
-                self._body = self.environ["wsgi.input"].read(length).decode("utf-8")
-            except (ValueError, KeyError):
-                self._body = ""
+            chunks = []
+            async for chunk in self.stream():
+                chunks.append(chunk)
+            self._body = b"".join(chunks)
         return self._body
 
-    @property
-    def json(self):
-        """Parse JSON request body."""
+    async def json(self):
         if self._json is None:
-            content_type = self.environ.get("CONTENT_TYPE", "")
+            content_type = self.headers.get("content-type", "")
             if "application/json" in content_type:
                 try:
-                    self._json = json.loads(self.body) if self.body else {}
+                    body_bytes = await self.body()
+                    self._json = json.loads(body_bytes) if body_bytes else {}
                 except (json.JSONDecodeError, ValueError):
                     self._json = {}
             else:
                 self._json = {}
         return self._json
 
-    @property
-    def form(self):
+    async def form(self):
         if self._form is None:
-            content_type = self.environ.get("CONTENT_TYPE", "")
+            content_type = self.headers.get("content-type", "")
             if self.method in ("POST", "PUT", "PATCH"):
                 if "application/x-www-form-urlencoded" in content_type:
-                    self._form = {k: v[0] for k, v in parse_qs(self.body).items()}
+                    body_bytes = await self.body()
+                    self._form = {k: v[0] for k, v in parse_qs(body_bytes.decode()).items()}
                 elif "multipart/form-data" in content_type:
-                    # Parse multipart form data
-                    self._parse_multipart()
+                    await self._parse_multipart()
                 else:
                     self._form = {}
             else:
                 self._form = {}
         return self._form
 
-    @property
-    def files(self):
-        """Access uploaded files from multipart/form-data requests."""
+    async def files(self):
         if self._files is None:
-            content_type = self.environ.get("CONTENT_TYPE", "")
+            content_type = self.headers.get("content-type", "")
             if self.method in ("POST", "PUT", "PATCH") and "multipart/form-data" in content_type:
-                self._parse_multipart()
+                await self._parse_multipart()
             else:
                 self._files = {}
         return self._files
@@ -74,15 +81,11 @@ class Request:
     def _parse_query(self, query_string):
         return {k: v[0] for k, v in parse_qs(query_string).items()}
 
-    def _parse_headers(self, environ):
-        return {
-            k[5:].replace("_", "-").title(): v
-            for k, v in environ.items()
-            if k.startswith("HTTP_")
-        }
+    def _parse_headers(self, raw_headers):
+        return {k.decode(): v.decode() for k, v in raw_headers}
 
-    def _parse_cookies(self, environ):
-        cookie_string = environ.get("HTTP_COOKIE", "")
+    def _parse_cookies(self, headers):
+        cookie_string = headers.get("cookie", "")
         if not cookie_string:
             return {}
         cookies = {}
@@ -92,73 +95,46 @@ class Request:
                 cookies[key] = value
         return cookies
 
-    def _parse_multipart(self):
-        """Parse multipart/form-data for forms and file uploads."""
+    async def _parse_multipart(self):
         if self._form is not None and self._files is not None:
-            return  # Already parsed
+            return
 
-        self._form = {}
-        self._files = {}
+        body_bytes = await self.body()
+        
+        environ = {
+            "wsgi.input": BytesIO(body_bytes),
+            "CONTENT_LENGTH": str(len(body_bytes)),
+            "CONTENT_TYPE": self.headers.get("content-type"),
+        }
 
-        try:
-            # parse multipart data
-            stream, form_data, files = parse_form_data(self.environ)
+        loop = asyncio.get_running_loop()
+        _, form_data, files_data = await loop.run_in_executor(
+            None, lambda: parse_form_data(environ)
+        )
 
-            # Convert form data to dict
-            for key in form_data.keys():
-                values = form_data.getlist(key)
-                if len(values) == 1:
-                    self._form[key] = values[0]
-                else:
-                    self._form[key] = values
-
-            # Convert files to UploadedFile objects
-            for key in files.keys():
-                file_list = files.getlist(key)
-                if len(file_list) == 1:
-                    self._files[key] = UploadedFile(file_list[0])
-                else:
-                    self._files[key] = [UploadedFile(f) for f in file_list]
-
-        except Exception:
-            # If parsing fails, initialize empty dicts
-            self._form = {}
-            self._files = {}
+        # Use .lists() to correctly handle multiple values for the same key.
+        self._form = {k: v[0] if len(v) == 1 else v for k, v in form_data.lists()}
+        self._files = {k: UploadedFile(v[0]) if len(v) == 1 else [UploadedFile(f) for f in v] for k, v in files_data.lists()}
 
 
 class UploadedFile:
-    """Represents an uploaded file."""
-
     def __init__(self, file_storage):
-        """
-        Initialize from a werkzeug FileStorage object.
-
-        Args:
-            file_storage: werkzeug.datastructures.FileStorage object
-        """
+        self.file_storage = file_storage
         self.filename = file_storage.filename
-        self.name = file_storage.name
         self.content_type = file_storage.content_type
-        self.stream = file_storage.stream
-        self._content = None
 
     def read(self):
-        """Read the file content."""
-        if self._content is None:
-            self.stream.seek(0)
-            self._content = self.stream.read()
-        return self._content
+        return self.file_storage.read()
 
     def save(self, destination):
-        """Save the uploaded file to a destination path."""
-        with open(destination, 'wb') as f:
-            f.write(self.read())
+        self.file_storage.save(destination)
 
     @property
     def size(self):
-        """Get the size of the uploaded file in bytes."""
-        content = self.read()
-        return len(content) if content else 0
+        self.file_storage.stream.seek(0, 2)
+        size = self.file_storage.stream.tell()
+        self.file_storage.stream.seek(0) # Reset stream position after getting size
+        return size
 
     def __repr__(self):
         return f"<UploadedFile: {self.filename} ({self.content_type})>"

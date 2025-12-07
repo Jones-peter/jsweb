@@ -316,11 +316,7 @@ def cli():
     args = parser.parse_args()
     sys.path.insert(0, os.getcwd())
 
-    if args.command == "run" and args.reload:
-        # ... (reloader logic remains the same)
-        pass
-
-    elif args.command == "run":
+    if args.command == "run":
         config = load_config()
 
         app_path = os.path.join(os.getcwd(), "app.py")
@@ -361,7 +357,7 @@ def cli():
                 url = f"http://{lan_ip}:{port}"
                 display_qr_code(url)
 
-            run(app_instance, host=host, port=port)
+            run(app_instance, host=host, port=port, reload=args.reload)
 
         except Exception as e:
             logger.error(f"❌ Error: Failed to run app. Details: {e}")

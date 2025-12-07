@@ -1,0 +1,15 @@
+{# This file contains reusable macros for rendering form fields. #}
+
+{% macro render_field(field) %}
+  <div class="form-group">
+    {{ field.label }}
+    {{ field(class="form-input", **kwargs) }}
+    {% if field.errors %}
+      <div class="error-messages">
+        {% for error in field.errors %}
+          <span class="error-message">{{ error }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}

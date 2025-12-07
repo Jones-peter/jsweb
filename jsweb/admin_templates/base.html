@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}JsWeb Admin{% endblock %}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin.css') }}">
+    <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin.css') }}?v={{ library_version }}">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
     <link rel="icon" href="{{ url_for('admin.static', filename='jsweb_logo_bg.png') }}" type="image/png">
 </head>
