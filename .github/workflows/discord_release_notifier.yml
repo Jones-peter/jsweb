@@ -1,0 +1,44 @@
+name: Discord Release Notifier
+
+# This action will only trigger when a new release is "published".
+# It won't trigger on drafts or pre-releases.
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    name: Send Discord Notification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Release Info to Discord
+        env:
+          # We securely access the webhook URL from the GitHub secret we created.
+          DISCORD_WEBHOOK_URL_1: ${{ secrets.DISCORD_WEBHOOK_URL_1 }}
+        run: |
+          # This command uses `curl` to send a POST request with a JSON payload.
+          # The JSON creates a nice-looking "embed" in Discord.
+          curl -X POST "$DISCORD_WEBHOOK_URL_1" \
+               -H "Content-Type: application/json" \
+               -d @- << EOF
+          {
+            "username": "JsWeb Releases",
+            "avatar_url": "https://github.com/Jones-peter/jsweb/blob/main/images/jsweb_logo_bg.png?raw=true",
+            "embeds": [
+              {
+                "title": "🚀 New Release: ${{ github.event.release.name }}",
+                "url": "${{ github.event.release.html_url }}",
+                "description": "${{ github.event.release.body }}",
+                "color": 5814783,
+                "author": {
+                  "name": "${{ github.event.release.author.login }}",
+                  "url": "${{ github.event.release.author.html_url }}",
+                  "icon_url": "${{ github.event.release.author.avatar_url }}"
+                },
+                "footer": {
+                  "text": "JsWeb Framework"
+                }
+              }
+            ]
+          }
+          EOF
