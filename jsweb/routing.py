@@ -1,4 +1,5 @@
 import re
+from typing import Dict, List, Optional, Callable
 
 
 class NotFound(Exception):
@@ -15,34 +16,68 @@ class MethodNotAllowed(Exception):
     pass
 
 
+# We define typed converters instead of using regex
+def _int_converter(value: str) -> Optional[int]:
+    """
+    Optimized integer converter using str.isdigit().
+    """
+    # we also handle negative integers
+    if value.startswith('-') and value[1:].isdigit():
+        return int(value)
+    return int(value) if value.isdigit() else None
+
+
+def _str_converter(value: str) -> str:
+    """String passthrough - no conversion needed."""
+    return value
+
+
+def _path_converter(value: str) -> str:
+    """Path passthrough - accepts any string including slashes."""
+    return value
+
+
 class Route:
     """
     Represents a single route with path, handler, and parameter conversion.
     """
-    def __init__(self, path, handler, methods, endpoint):
+
+    # We use __slots__ to reduce memory usage and to speed up attribute access
+    __slots__ = ('path', 'handler', 'methods', 'endpoint', 'converters',
+                 'is_static', 'regex', 'param_names')
+
+    # Class-level type converters - optimized functions instead of just type constructors
+    TYPE_CONVERTERS = {
+        'str': (_str_converter, r'[^/]+'),
+        'int': (_int_converter, r'-?\d+'),  # Allow optional negative sign
+        'path': (_path_converter, r'.+?')
+    }
+
+    def __init__(self, path: str, handler: Callable, methods: List[str], endpoint: str):
         self.path = path
         self.handler = handler
-        self.methods = methods
+        self.methods = methods  # List is faster than set for small N (1-3 methods)
         self.endpoint = endpoint
         self.converters = {}
-        self.regex, self.param_names = self._compile_path()
+        self.is_static = '<' not in path  # Flag for static routes
+        if not self.is_static:
+            self.regex, self.param_names = self._compile_path()
+        else:
+            self.regex = None
+            self.param_names = []
+        
 
     def _compile_path(self):
         """
         Compiles the path into a regex and extracts parameter converters.
         """
-        type_converters = {
-            'str': (str, r'[^/]+'),
-            'int': (int, r'\d+'),
-            'path': (str, r'.+?')
-        }
         
         param_defs = re.findall(r"<(\w+):(\w+)>", self.path)
         regex_path = "^" + self.path + "$"
         param_names = []
 
         for type_name, param_name in param_defs:
-            converter, regex_part = type_converters.get(type_name, type_converters['str'])
+            converter, regex_part = self.TYPE_CONVERTERS.get(type_name, self.TYPE_CONVERTERS['str'])
             regex_path = regex_path.replace(f"<{type_name}:{param_name}>", f"(?P<{param_name}>{regex_part})")
             self.converters[param_name] = converter
             param_names.append(param_name)
@@ -53,6 +88,12 @@ class Route:
         """
         Matches the given path against the route's regex and returns converted parameters.
         """
+
+        #For static routes, string comparison is much faster than regex
+        if self.is_static:
+            return {} if path == self.path else None
+        
+        # For dynamic routes, use pre-compiled regex
         match = self.regex.match(path)
         if not match:
             return None
@@ -62,8 +103,9 @@ class Route:
             for name, value in params.items():
                 params[name] = self.converters[name](value)
             return params
-        except ValueError:
+        except (ValueError, TypeError):
             return None
+
 
 
 class Router:
@@ -71,37 +113,12 @@ class Router:
     Handles routing by mapping URL paths to view functions and endpoint names.
     """
     def __init__(self):
-        self.routes = []
-        self.endpoints = {}  # For reverse lookups (url_for)
-        self.static_url_path = None
-        self.static_dir = None
+        self.static_routes: Dict[str, Route] = {}
+        self.dynamic_routes: List[Route] = []
+        self.endpoints: Dict[str, Route] = {}  # For reverse lookups (url_for)
 
-    def add_static_route(self, url_path, directory):
-        """
-        Adds a route for serving static files.
-        """
-        self.static_url_path = url_path
-        self.static_dir = directory
-        
-        # Simple handler for serving static files
-        def static_handler(filename):
-            import os
-            from werkzeug.exceptions import NotFound
-            
-            # Basic security check
-            if '..' in filename or filename.startswith('/'):
-                raise NotFound()
 
-            file_path = os.path.join(self.static_dir, filename)
-            if os.path.isfile(file_path):
-                # In a real app, you would return a proper file response here.
-                # For now, we'll just indicate success.
-                return f"Serving {file_path}"
-            raise NotFound()
-
-        self.add_route(f"{url_path}/<path:filename>", static_handler, endpoint="static")
-
-    def add_route(self, path, handler, methods=None, endpoint=None):
+    def add_route(self, path: str, handler: Callable, methods: Optional[List[str]]=None, endpoint: Optional[str]=None):
         """
         Adds a new route to the router.
         """
@@ -115,10 +132,15 @@ class Router:
             raise ValueError(f"Endpoint \"{endpoint}\" is already registered.")
 
         route = Route(path, handler, methods, endpoint)
-        self.routes.append(route)
+
+        if route.is_static:
+            self.static_routes[path] = route
+        else:
+            self.dynamic_routes.append(route)
+        
         self.endpoints[endpoint] = route
 
-    def route(self, path, methods=None, endpoint=None):
+    def route(self, path: str, methods:Optional[List[str]]=None, endpoint:Optional[str]=None):
         """
         A decorator to register a view function for a given URL path.
         """
@@ -131,14 +153,22 @@ class Router:
         """
         Finds the appropriate handler for a given path and HTTP method.
         """
-        for route in self.routes:
+        # Static routes: O(1) dict lookup + O(k) method check (k=1-3)
+        if path in self.static_routes:
+            route = self.static_routes[path]
+            if method in route.methods:
+                return route.handler, {}
+            raise MethodNotAllowed(f"Method {method} not allowed for path {path}.")
+
+        # Dynamic routes: Check method before expensive regex matching
+        for route in self.dynamic_routes:
+            if method not in route.methods:  # Quick rejection for mismatched methods
+                continue
+            # Now do the expensive regex matching
             params = route.match(path)
             if params is not None:
-                if method in route.methods:
-                    return route.handler, params
-                else:
-                    raise MethodNotAllowed
-        raise NotFound
+                return route.handler, params
+        raise NotFound(f"No route found for {path}")
 
     def url_for(self, endpoint, **params):
         """
@@ -150,17 +180,17 @@ class Router:
         route = self.endpoints[endpoint]
         path = route.path
 
+        if route.is_static:
+            return path
+
         for param_name in route.param_names:
             if param_name not in params:
                 raise ValueError(f"Missing parameter '{param_name}' for endpoint '{endpoint}'.")
             
-            # This is a simplified replacement. For a full implementation,
-            # you'd need to handle the <type:name> format more robustly.
-            # For this example, we assume simple string replacement.
-            path = re.sub(r"<(\w+):" + param_name + ">", str(params[param_name]), path)
-
-        # Handle any remaining simple path variables like '<id>'
-        for key, value in params.items():
-            path = path.replace(f"<{key}>", str(value))
+            for type_name in Route.TYPE_CONVERTERS.keys():
+                pattern = f"<{type_name}:{param_name}>"
+                if pattern in path:
+                    path = path.replace(pattern, str(params[param_name]))
+                    break
         
         return path

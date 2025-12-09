@@ -39,7 +39,8 @@ dependencies = [
     "werkzeug",
     "itsdangerous",
     "alembic",
-    "markupsafe"
+    "markupsafe",
+    "uvicorn"
 ]
 
 [project.optional-dependencies]
