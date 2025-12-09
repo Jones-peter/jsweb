@@ -42,7 +42,7 @@ class Route:
     Represents a single route with path, handler, and parameter conversion.
     """
 
-    # We use __slots__ to reduce memory usage and speed up attribute access
+    # We use __slots__ to reduce memory usage and to speed up attribute access
     __slots__ = ('path', 'handler', 'methods', 'endpoint', 'converters',
                  'is_static', 'regex', 'param_names')
 
