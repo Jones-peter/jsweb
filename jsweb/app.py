@@ -1,9 +1,9 @@
 import secrets
 import os
 import asyncio
-from .routing import Router
+from .routing import Router, NotFound, MethodNotAllowed
 from .request import Request
-from .response import Response, HTMLResponse, configure_template_env
+from .response import Response, HTMLResponse, configure_template_env, JSONResponse
 from .auth import init_auth, get_current_user
 from .middleware import StaticFilesMiddleware, DBSessionMiddleware, CSRFMiddleware
 from .blueprints import Blueprint
@@ -80,7 +80,14 @@ class JsWebApp:
     async def _asgi_app_handler(self, scope, receive, send):
         req = scope['jsweb.request']
 
-        handler, params = self.router.resolve(req.path, req.method)
+        try:
+            handler, params = self.router.resolve(req.path, req.method)
+        except NotFound as e:
+            return JSONResponse({"error": str(e)}, status_code=404)
+        except MethodNotAllowed as e:
+            return JSONResponse({"error": str(e)}, status_code=405)
+        except Exception as e:
+            return JSONResponse({"error": "Internal Server Error"}, status_code=500)
         if handler:
             # Support both sync and async handlers
             if asyncio.iscoroutinefunction(handler):
