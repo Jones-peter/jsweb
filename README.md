@@ -51,7 +51,7 @@ With built-in, zero-configuration AJAX and a focus on developer experience, JsWe
 
 ### Contributors
 <a href="https://github.com/jones-peter/jsweb/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=jones-peter/jsweb&v=2" />
+  <img src="https://contrib.rocks/image?repo=jones-peter/jsweb" />
 </a>
 
 ## Command-Line Interface (CLI)
