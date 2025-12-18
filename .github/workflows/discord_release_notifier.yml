@@ -1,34 +1,31 @@
 name: Discord Release Notifier
 
-# This action will only trigger when a new release is "published".
-# It won't trigger on drafts or pre-releases.
 on:
   release:
     types: [published]
 
 jobs:
   notify:
-    name: Send Discord Notification
     runs-on: ubuntu-latest
     steps:
       - name: Send Release Info to Discord
         env:
-          # We securely access the webhook URL from the GitHub secret we created.
           DISCORD_WEBHOOK_URL_1: ${{ secrets.DISCORD_WEBHOOK_URL_1 }}
         run: |
-          # This command uses `curl` to send a POST request with a JSON payload.
-          # The JSON creates a nice-looking "embed" in Discord.
+          # Truncate release notes to avoid Discord limit (4000 chars safe)
+          BODY=$(echo "${{ github.event.release.body }}" | head -c 4000)
+
           curl -X POST "$DISCORD_WEBHOOK_URL_1" \
-               -H "Content-Type: application/json" \
-               -d @- << EOF
+            -H "Content-Type: application/json" \
+            -d @- << EOF
           {
-            "username": "Github Releases",
+            "username": "GitHub Releases",
             "avatar_url": "https://github.com/github.png",
             "embeds": [
               {
                 "title": "🚀 New Release: ${{ github.event.release.name }}",
                 "url": "${{ github.event.release.html_url }}",
-                "description": "${{ github.event.release.body }}",
+                "description": "$BODY\n\n🔗 **Read full changelog on GitHub**",
                 "color": 5814783,
                 "author": {
                   "name": "${{ github.event.release.author.login }}",
