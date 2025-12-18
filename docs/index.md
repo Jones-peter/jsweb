@@ -33,7 +33,6 @@ hide:
 ---
 
 **JsWeb** is a blazing-fast, lightweight ASGI Python web framework that combines traditional MVC architecture and modern API-first development into a single, unified technology.
-
 Build full-stack web apps and APIs together without switching frameworks.
 
 ## ✨ Key Features
