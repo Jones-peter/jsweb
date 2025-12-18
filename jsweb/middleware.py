@@ -31,8 +31,9 @@ class CSRFMiddleware(Middleware):
     Middleware to protect against Cross-Site Request Forgery (CSRF) attacks.
 
     This middleware checks for a valid CSRF token in POST, PUT, PATCH, and DELETE
-    requests. It compares a token from the form data against a token stored in a cookie.
+    requests. It supports both form-based and JSON-based requests.
     """
+
     async def __call__(self, scope, receive, send):
         """
         Validates the CSRF token for state-changing HTTP methods.
@@ -52,17 +53,33 @@ class CSRFMiddleware(Middleware):
         req = scope['jsweb.request']
 
         if req.method in ("POST", "PUT", "PATCH", "DELETE"):
-            form = await req.form()
-            form_token = form.get("csrf_token")
+            token = await self._get_token_from_request(req)
             cookie_token = req.cookies.get("csrf_token")
 
-            if not form_token or not cookie_token or not secrets.compare_digest(form_token, cookie_token):
+            if not token or not cookie_token or not secrets.compare_digest(token, cookie_token):
                 logger.error("CSRF VALIDATION FAILED. Tokens do not match or are missing.")
                 response = Forbidden("CSRF token missing or invalid.")
                 await response(scope, receive, send)
                 return
 
         await self.app(scope, receive, send)
+
+    async def _get_token_from_request(self, req):
+        """
+        Extracts the CSRF token from the request, handling both JSON and form data.
+        """
+        content_type = req.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                data = await req.json()
+                return data.get("csrf_token")
+            except Exception:
+                # In case of malformed JSON, treat as if no token was sent
+                return None
+        else:
+            # Fallback for form data
+            form = await req.form()
+            return form.get("csrf_token")
 
 class StaticFilesMiddleware(Middleware):
     """
