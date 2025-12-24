@@ -175,8 +175,24 @@ class DBSessionMiddleware(Middleware):
 
         from .database import db_session
         try:
-            await self.app(scope, receive, send)
-            db_session.commit()
+            status_code = None
+
+            async def send_wrapper(message):
+                nonlocal status_code
+                if message["type"] == "http.response.start":
+                    status_code = message["status"]
+                await send(message )
+
+            await self.app(scope, receive, send_wrapper)
+
+            # Commit only if the response status code is a success (2xx)
+            # If status_code is None, it means no response was sent, which is an error state
+            # or a successful response that didn't send headers yet (unlikely in a standard flow).
+            # It's safer to rollback if status_code is not set or is not 2xx.
+            if status_code is not None and 200 <= status_code < 300:
+                db_session.commit()
+            else:
+                db_session.rollback()
         except Exception:
             db_session.rollback()
             raise
