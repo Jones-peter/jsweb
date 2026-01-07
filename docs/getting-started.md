@@ -93,16 +93,54 @@ myproject/
 
 ### Key Files Explained
 
-| File          | Purpose                                                    |
-|---------------|-------------------------------------------------------------|
-| `app.py`      | Creates and configures your JsWeb application instance     |
-| `config.py`   | Stores application configuration (database, secret key, etc) |
-| `models.py`   | Define your database models/tables                          |
-| `views.py`    | Define your routes and request handlers                     |
-| `forms.py`    | Define your HTML forms and validation rules                |
-| `auth.py`     | Handle user authentication and authorization                |
-| `templates/`  | Store your HTML templates                                  |
-| `static/`     | Store CSS, JavaScript, and image files                      |
+| File          | Purpose                                                    | Returns/Type |
+|---------------|--------------------------------------------------------------|-------------|
+| `app.py`      | Creates and configures your JsWeb application instance     | `JsWebApp` |
+| `config.py`   | Stores application configuration (database, secret key, etc) | Config class |
+| `models.py`   | Define your database models/tables                          | Model classes |
+| `views.py`    | Define your routes and request handlers                     | Route handlers return `Response` or `str` |
+| `forms.py`    | Define your HTML forms and validation rules                 | Form classes |
+| `auth.py`     | Handle user authentication and authorization                | Auth utilities |
+| `templates/`  | Store your HTML templates                                   | Rendered by `render()` → `HTMLResponse` |
+| `static/`     | Store CSS, JavaScript, and image files                      | Served as static content |
+
+## Return Types in Your Project
+
+Here's a quick reference for common return types you'll see in your JsWeb handlers:
+
+```python
+from jsweb.response import render, html, json, HTMLResponse, JSONResponse
+from jsweb.database import ModelBase
+
+# Route handlers can return strings (auto-converted to HTMLResponse)
+@app.route("/")
+async def home(req) -> str:
+    return "Hello, World!"
+
+# Or explicitly return Response objects
+@app.route("/page")
+async def page(req) -> HTMLResponse:
+    return html("<h1>Welcome</h1>")
+
+# Render templates - always returns HTMLResponse
+@app.route("/about")
+async def about(req) -> HTMLResponse:
+    return render(req, "about.html", {})
+
+# JSON responses for APIs
+@app.route("/api/data")
+async def get_data(req) -> JSONResponse:
+    return json({"message": "success"})
+
+# Database queries return models or None
+from models import User
+user: Optional[User] = User.query.get(1)
+users: List[User] = User.query.all()
+
+# Database operations return None
+user.save()  # -> None
+user.delete()  # -> None
+```
 
 ## Running the Development Server
 

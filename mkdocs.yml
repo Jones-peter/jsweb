@@ -52,6 +52,9 @@ nav:
         - 'Database': 'database.md'
         - 'Blueprints': 'blueprints.md'
         - 'Admin': 'admin.md'
+    - 'API Reference':
+        - 'Response Types': 'response-types.md'
+        - 'DTOs & Data Models': 'dto-models.md'
     - 'Command-Line Interface': 'cli.md'
     - 'OpenAPI Guide': 'JSWEB_OPENAPI_GUIDE.md'
 

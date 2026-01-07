@@ -7,6 +7,7 @@ JsWeb provides a simple and powerful way to work with databases using [SQLAlchem
 - [Configuration](#configuration)
 - [Defining Models](#defining-models)
 - [Model Fields](#model-fields)
+- [Return Types](#return-types)
 - [Querying the Database](#querying-the-database)
 - [Database Migrations](#database-migrations)
 - [Relationships](#relationships)
@@ -98,78 +99,148 @@ class Product(ModelBase):
     category = Column(String(50), index=True)
 ```
 
+## Return Types
+
+ModelBase provides CRUD (Create, Read, Update, Delete) operations with the following return types:
+
+### ModelBase Methods Return Types
+
+| Method | Return Type | Description |
+|--------|------------|-------------|
+| `Model.create(**kwargs)` | `Model` | Creates and saves instance |
+| `instance.save()` | `None` | Saves changes to database |
+| `instance.update(**kwargs)` | `None` | Updates fields and saves |
+| `instance.delete()` | `None` | Deletes instance from database |
+| `Model.query.get(id)` | `Optional[Model]` | Get by primary key or None |
+| `Model.query.first()` | `Optional[Model]` | Get first result or None |
+| `Model.query.all()` | `List[Model]` | Get all results as list |
+| `Model.query.filter_by()` | `Query` | Query builder |
+
+### Example with Type Hints
+
+```python
+from typing import Optional, List
+from jsweb.database import ModelBase
+
+class User(ModelBase):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String(80), unique=True)
+    email = Column(String(120))
+
+# Create - returns User instance
+user: User = User.create(username="alice", email="alice@example.com")
+
+# Read - returns Optional[User]
+user: Optional[User] = User.query.get(1)
+user: Optional[User] = User.query.filter_by(username="bob").first()
+users: List[User] = User.query.all()
+
+# Update - returns None
+user.email = "newemail@example.com"
+user.save()  # -> None
+
+# Update with update() - returns None
+user.update(email="another@example.com")  # -> None
+
+# Delete - returns None
+user.delete()  # -> None
+```
+
 ## Querying the Database
 
 ### Get All Records
 
 ```python
+from typing import List
 from .models import User
+from jsweb.response import render, HTMLResponse
 
 @app.route("/users")
-async def user_list(req):
-    users = User.query.all()
+async def user_list(req) -> HTMLResponse:
+    users: List[User] = User.query.all()
     return render(req, "users.html", {"users": users})
 ```
 
 ### Get a Single Record by ID
 
 ```python
+from typing import Optional
+from jsweb.response import render, json, HTMLResponse, JSONResponse
+
 @app.route("/user/<int:user_id>")
-async def user_detail(req, user_id):
-    user = User.query.get(user_id)
+async def user_detail(req, user_id: int) -> HTMLResponse:
+    user: Optional[User] = User.query.get(user_id)
     if user is None:
-        return "User not found", 404
+        return render(req, "404.html", {}), 404
     return render(req, "user.html", {"user": user})
+
+# JSON API version
+@app.route("/api/user/<int:user_id>")
+async def api_user_detail(req, user_id: int) -> JSONResponse:
+    user: Optional[User] = User.query.get(user_id)
+    if user is None:
+        return json({"error": "User not found"}, status_code=404)
+    return json(user.to_dict())
 ```
 
 ### Filter Records
 
 ```python
-# Get user by username
-user = User.query.filter_by(username="alice").first()
-
-# Get all admin users
-admins = User.query.filter_by(role="admin").all()
-
-# Using filter() for more complex conditions
+from typing import List, Optional
 from sqlalchemy import or_
 
-users = User.query.filter(
+# Get user by username - returns Optional[User]
+user: Optional[User] = User.query.filter_by(username="alice").first()
+
+# Get all admin users - returns List[User]
+admins: List[User] = User.query.filter_by(role="admin").all()
+
+# Using filter() for more complex conditions - returns List[User]
+users: List[User] = User.query.filter(
     or_(User.username == "alice", User.email == "alice@example.com")
 ).all()
 ```
 
 !!! tip "first() vs all()"
-    - `first()` returns the first result or `None`
-    - `all()` returns a list of all results
-    - `get(id)` returns the record with that primary key or `None`
+    - `first()` returns `Optional[Model]` (first result or `None`)
+    - `all()` returns `List[Model]` (all results)
+    - `get(id)` returns `Optional[Model]` (by primary key or `None`)
 
 ### Creating Records
 
 ```python
-# Method 1: Using create()
-new_user = User.create(username="john", email="john@example.com")
+# Method 1: Using create() - returns Model instance
+new_user: User = User.create(username="john", email="john@example.com")
 
-# Method 2: Creating and saving manually
+# Method 2: Creating and saving manually - returns None
 user = User(username="jane", email="jane@example.com")
-db.session.add(user)
-db.session.commit()
+user.save()  # -> None
 ```
 
 ### Updating Records
 
 ```python
-user = User.query.get(1)
-user.email = "newemail@example.com"
-db.session.commit()
+# Method 1: Manual update - returns None
+user: Optional[User] = User.query.get(1)
+if user:
+    user.email = "newemail@example.com"
+    user.save()  # -> None
+
+# Method 2: Using update() - returns None
+user.update(email="another@example.com")  # -> None
 ```
 
 ### Deleting Records
 
 ```python
-user = User.query.get(1)
-db.session.delete(user)
-db.session.commit()
+# Method 1: Delete instance - returns None
+user: Optional[User] = User.query.get(1)
+if user:
+    user.delete()  # -> None
+
+# Method 2: Query and delete
+User.query.filter_by(username="inactive").delete()
 ```
 
 ## Database Migrations

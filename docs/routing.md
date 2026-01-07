@@ -5,6 +5,7 @@ Routing is the process of mapping URLs to the functions that handle them. In JsW
 ## Table of Contents
 
 - [Basic Routing](#basic-routing)
+- [Return Types](#return-types)
 - [HTTP Methods](#http-methods)
 - [URL Parameters](#url-parameters)
 - [Type Converters](#type-converters)
@@ -31,6 +32,66 @@ In this example, we're mapping the root URL (`/`) to the `home` function. When a
 
 !!! note "Async Functions"
     JsWeb routes are always async functions. This allows your application to handle multiple concurrent requests efficiently.
+
+## Return Types
+
+All route handlers must return a **Response object** or a **string** (which is auto-converted to `HTMLResponse`).
+
+### Valid Return Types
+
+```python
+from jsweb.response import Response, HTMLResponse, JSONResponse, RedirectResponse, html, json, redirect
+
+# String - automatically converted to HTMLResponse
+@app.route("/")
+async def home(req):  # No explicit return type
+    return "Hello, World!"
+
+# HTMLResponse explicitly typed
+@app.route("/page")
+async def page(req) -> HTMLResponse:
+    return html("<h1>Welcome</h1>")
+
+# JSONResponse
+@app.route("/api/data")
+async def get_data(req) -> JSONResponse:
+    return json({"status": "ok"})
+
+# RedirectResponse
+@app.route("/go")
+async def go(req) -> RedirectResponse:
+    return redirect("/home")
+
+# Base Response class
+@app.route("/custom")
+async def custom(req) -> Response:
+    return Response("Custom content", status_code=200)
+```
+
+### Return Type Reference
+
+| Return Type | Usage | Example |
+|------------|-------|---------|
+| `str` | Simple HTML | `return "Hello"` |
+| `HTMLResponse` | Rendered HTML | `return render(req, "template.html", {})` |
+| `JSONResponse` | JSON API responses | `return json({"data": [1,2,3]})` |
+| `RedirectResponse` | HTTP redirects | `return redirect("/page")` |
+| `Response` | Custom responses | `return Response(body, status_code=200)` |
+
+!!! warning "Type Mismatch"
+    Ensure your return type matches the actual value returned. This helps with IDE autocomplete and catches bugs early:
+    
+    ```python
+    # ✓ Correct
+    @app.route("/api")
+    async def api(req) -> JSONResponse:
+        return json({"data": "value"})
+    
+    # ✗ Incorrect type hint
+    @app.route("/page")
+    async def page(req) -> JSONResponse:
+        return "HTML content"  # Mismatch!
+    ```
 
 ## HTTP Methods
 
@@ -100,28 +161,28 @@ async def profile_by_id(req, user_id):
 ```python
 # String (default)
 @app.route("/search/<query>")
-async def search(req, query):
+async def search(req, query) -> str:
     return f"Searching for: {query}"
 
 # Integer
 @app.route("/post/<int:post_id>")
-async def get_post(req, post_id):
+async def get_post(req, post_id) -> str:
     return f"Viewing post {post_id}"
 
 # Float
 @app.route("/temperature/<float:celsius>")
-async def convert_temp(req, celsius):
+async def convert_temp(req, celsius) -> str:
     fahrenheit = (celsius * 9/5) + 32
     return f"{celsius}°C is {fahrenheit}°F"
 
 # Path (allows slashes)
 @app.route("/files/<path:filepath>")
-async def serve_file(req, filepath):
+async def serve_file(req, filepath) -> str:
     return f"Serving: {filepath}"
 
 # UUID
 @app.route("/item/<uuid:item_id>")
-async def get_item(req, item_id):
+async def get_item(req, item_id) -> str:
     return f"Item: {item_id}"
 ```
 
@@ -130,8 +191,11 @@ async def get_item(req, item_id):
     
     ```python
     @app.route("/post/<int:post_id>/comment/<int:comment_id>")
-    async def get_comment(req, post_id, comment_id):
-        return f"Post {post_id}, Comment {comment_id}"
+    async def get_comment(req, post_id, comment_id) -> JSONResponse:
+        return json({
+            "post_id": post_id,
+            "comment_id": comment_id
+        })
     ```
 
 ## Route Organization with Blueprints
@@ -145,12 +209,12 @@ from jsweb import Blueprint
 user_bp = Blueprint('users', url_prefix='/users')
 
 @user_bp.route('/')
-async def user_list(req):
-    return "All users"
+async def user_list(req) -> JSONResponse:
+    return json({"users": []})
 
 @user_bp.route('/<int:user_id>')
-async def user_detail(req, user_id):
-    return f"User {user_id}"
+async def user_detail(req, user_id) -> JSONResponse:
+    return json({"user_id": user_id})
 
 # Register in app.py
 from views import user_bp
@@ -168,20 +232,20 @@ See [Blueprints](blueprints.md) for more details.
 ```python
 @app.route("/api/items")
 @app.route("/api/items/<int:item_id>")
-async def get_items(req, item_id=None):
+async def get_items(req, item_id: Optional[int] = None) -> JSONResponse:
     if item_id:
-        return f"Item {item_id}"
-    return "All items"
+        return json({"item_id": item_id})
+    return json({"items": []})
 ```
 
 ### Query Parameters
 
 ```python
 @app.route("/search")
-async def search(req):
-    query = req.query_params.get('q', '')
-    page = req.query_params.get('page', '1')
-    return f"Searching for: {query} (page {page})"
+async def search(req) -> HTMLResponse:
+    query = req.query.get('q', '')
+    page = req.query.get('page', '1')
+    return html(f"<p>Searching for: {query} (page {page})</p>")
 ```
 
 Usage: `/search?q=python&page=2`
@@ -189,14 +253,16 @@ Usage: `/search?q=python&page=2`
 ### Dynamic Responses
 
 ```python
+from jsweb.response import JSONResponse
+
 @app.route("/api/users/<int:user_id>", methods=["GET", "PUT", "DELETE"])
-async def manage_user(req, user_id):
+async def manage_user(req, user_id) -> JSONResponse:
     if req.method == "GET":
-        return {"user_id": user_id, "action": "retrieve"}
+        return json({"user_id": user_id, "action": "retrieve"})
     elif req.method == "PUT":
-        return {"user_id": user_id, "action": "update"}
+        return json({"user_id": user_id, "action": "update"})
     elif req.method == "DELETE":
-        return {"user_id": user_id, "action": "delete"}
+        return json({"user_id": user_id, "action": "delete"})
 ```
 
 ## Best Practices

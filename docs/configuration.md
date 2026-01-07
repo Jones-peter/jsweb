@@ -6,6 +6,7 @@ JsWeb applications are configured using a `config.py` file in your project's roo
 
 - [Config File Structure](#config-file-structure)
 - [Core Configuration Options](#core-configuration-options)
+- [OpenAPI & API Documentation Configuration](#openapi--api-documentation-configuration)
 - [Database Configuration](#database-configuration)
 - [Security Settings](#security-settings)
 - [Development vs Production](#development-vs-production)
@@ -22,7 +23,11 @@ import os
 # Get the base directory of the project
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# Secret key for signing sessions and other security-related things
+# Application info
+APP_NAME = "myproject"
+VERSION = "0.1.0"
+
+# Security
 SECRET_KEY = "your-secret-key"
 
 # Database configuration
@@ -35,6 +40,19 @@ STATIC_DIR = os.path.join(BASE_DIR, "static")
 
 # Template files configuration
 TEMPLATE_FOLDER = "templates"
+
+# Server configuration
+HOST = "127.0.0.1"
+PORT = 8000
+
+# OpenAPI / API Documentation (Automatic!)
+ENABLE_OPENAPI_DOCS = True
+API_TITLE = "myproject API"
+API_VERSION = "1.0.0"
+API_DESCRIPTION = "API documentation"
+OPENAPI_DOCS_URL = "/docs"
+OPENAPI_REDOC_URL = "/redoc"
+OPENAPI_JSON_URL = "/openapi.json"
 ```
 
 ## Core Configuration Options
@@ -52,6 +70,108 @@ Here are the most important configuration options:
 | `STATIC_DIR` | String | Directory path for static files |
 | `TEMPLATE_FOLDER` | String | Directory for templates |
 | `MAX_CONTENT_LENGTH` | Integer | Maximum upload file size in bytes |
+| `BASE_DIR` | String | Absolute path to project root directory |
+| `HOST` | String | Server host address (default: `127.0.0.1`) |
+| `PORT` | Integer | Server port (default: `8000`) |
+| `APP_NAME` | String | Application name |
+| `VERSION` | String | Application version |
+
+## OpenAPI & API Documentation Configuration
+
+JsWeb automatically generates OpenAPI documentation with Swagger UI and ReDoc. Configure these settings to customize your API documentation:
+
+```python
+# OpenAPI / Swagger Documentation Configuration
+ENABLE_OPENAPI_DOCS = True              # Enable/disable automatic API documentation
+API_TITLE = "My App API"                # API title shown in documentation
+API_VERSION = "1.0.0"                   # API version
+API_DESCRIPTION = "API for my app"      # API description (supports Markdown!)
+OPENAPI_DOCS_URL = "/docs"              # Swagger UI endpoint
+OPENAPI_REDOC_URL = "/redoc"            # ReDoc UI endpoint  
+OPENAPI_JSON_URL = "/openapi.json"      # OpenAPI specification JSON endpoint
+```
+
+### API Documentation Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `ENABLE_OPENAPI_DOCS` | Boolean | `True` | Enable/disable automatic OpenAPI documentation |
+| `API_TITLE` | String | `"jsweb API"` | Title displayed in API documentation |
+| `API_VERSION` | String | `"1.0.0"` | Version of your API |
+| `API_DESCRIPTION` | String | `""` | Description of your API (supports Markdown) |
+| `OPENAPI_DOCS_URL` | String | `"/docs"` | URL endpoint for Swagger UI |
+| `OPENAPI_REDOC_URL` | String | `"/redoc"` | URL endpoint for ReDoc UI |
+| `OPENAPI_JSON_URL` | String | `"/openapi.json"` | URL endpoint for OpenAPI JSON specification |
+
+### Using Markdown in API Description
+
+The `API_DESCRIPTION` supports Markdown formatting for rich documentation:
+
+```python
+API_DESCRIPTION = """
+# My Awesome API
+
+This is a **production-ready** API built with JsWeb.
+
+## Features
+
+- Fast ASGI framework
+- Automatic OpenAPI documentation
+- Built-in authentication
+- Database ORM support
+
+## Base URL
+
+`https://api.example.com`
+"""
+```
+
+### Example: Complete API Documentation Setup
+
+```python
+# config.py
+import os
+
+# Core settings
+APP_NAME = "Task Manager"
+VERSION = "2.1.0"
+SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key')
+DEBUG = os.getenv('DEBUG', False)
+
+# Database
+SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"
+
+# API Documentation
+ENABLE_OPENAPI_DOCS = True
+API_TITLE = "Task Manager API"
+API_VERSION = "2.1.0"
+API_DESCRIPTION = """
+# Task Manager API
+
+A powerful REST API for managing tasks and projects.
+
+## Authentication
+
+All endpoints require Bearer token authentication.
+
+## Error Handling
+
+Errors are returned as JSON with appropriate HTTP status codes.
+"""
+OPENAPI_DOCS_URL = "/api/docs"
+OPENAPI_REDOC_URL = "/api/redoc"
+OPENAPI_JSON_URL = "/api/spec.json"
+```
+
+### Disabling Documentation
+
+To disable automatic API documentation:
+
+```python
+ENABLE_OPENAPI_DOCS = False
+```
+
+When disabled, the documentation endpoints will not be registered.
 
 ## Database Configuration
 

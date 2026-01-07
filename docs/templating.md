@@ -5,6 +5,7 @@ JsWeb uses the [Jinja2](https://jinja.palletsprojects.com/) templating engine to
 ## Table of Contents
 
 - [Rendering Templates](#rendering-templates)
+- [Return Types](#return-types)
 - [Template Variables](#template-variables)
 - [Control Structures](#control-structures)
 - [Template Filters](#template-filters)
@@ -17,18 +18,68 @@ JsWeb uses the [Jinja2](https://jinja.palletsprojects.com/) templating engine to
 
 To render a template, use the `render` function from the `jsweb.response` module:
 
+**Return Type:** `HTMLResponse`
+
 ```python
-from jsweb.response import render
+from jsweb.response import render, HTMLResponse
 
 @app.route("/")
-async def home(req):
+async def home(req) -> HTMLResponse:
     return render(req, "index.html", {"name": "World"})
 ```
 
 In this example, we're rendering the `index.html` template and passing a context dictionary with a `name` variable. The `render` function automatically looks for templates in the `templates` folder of your project.
 
+### render() Function Signature
+
+```python
+def render(
+    req: Request,
+    template_name: str,
+    context: dict = None
+) -> HTMLResponse:
+    """
+    Renders a Jinja2 template into an HTMLResponse.
+    
+    Args:
+        req: The request object
+        template_name: Name of the template file
+        context: Dictionary of context variables
+        
+    Returns:
+        HTMLResponse: The rendered HTML response
+    """
+```
+
 !!! tip "Template Location"
     Templates must be in a `templates` folder in your project root. JsWeb automatically discovers and serves them.
+
+## Return Types
+
+All templating functions return `HTMLResponse` objects:
+
+### Helper Functions
+
+```python
+from jsweb.response import render, html, HTMLResponse
+
+# render() returns HTMLResponse
+@app.route("/page")
+async def page(req) -> HTMLResponse:
+    return render(req, "page.html", {"title": "My Page"})
+
+# html() helper returns HTMLResponse
+@app.route("/simple")
+async def simple(req) -> HTMLResponse:
+    return html("<h1>Hello</h1>")
+```
+
+### Return Type Reference
+
+| Function | Return Type | Usage |
+|----------|------------|-------|
+| `render()` | `HTMLResponse` | Load and render template files |
+| `html()` | `HTMLResponse` | Quick HTML response |
 
 ## Template Variables
 
@@ -41,16 +92,25 @@ You can use variables in your templates by enclosing them in double curly braces
 <p>Items count: {{ items | length }}</p>
 ```
 
-### Variable Examples
+### Variable Examples with Type Hints
 
 ```python
-# Python
-context = {
-    "name": "Alice",
-    "user": {"username": "alice", "email": "alice@example.com"},
-    "items": [1, 2, 3, 4, 5],
-    "count": 42
-}
+from jsweb.response import render, HTMLResponse
+from typing import List, Dict, Any
+
+@app.route("/")
+async def home(req) -> HTMLResponse:
+    # Context with various types
+    context: Dict[str, Any] = {
+        "name": "Alice",              # str
+        "user": {                     # dict
+            "username": "alice",
+            "email": "alice@example.com"
+        },
+        "items": [1, 2, 3, 4, 5],    # list
+        "count": 42                   # int
+    }
+    return render(req, "index.html", context)
 ```
 
 ```html
@@ -268,25 +328,31 @@ Macros are reusable template functions. They help eliminate code duplication for
 
 ## Custom Filters
 
-Create custom filters to extend Jinja2's functionality:
+Create custom filters to extend Jinja2's functionality. Filters always return a value (typically `str` or modified value):
 
 ```python
+from typing import str, Any
+
 # app.py
 @app.filter("markdown")
-def markdown_filter(text):
+def markdown_filter(text: str) -> str:
+    """Convert markdown text to HTML"""
     import markdown
     return markdown.markdown(text)
 
 @app.filter("slugify")
-def slugify_filter(text):
+def slugify_filter(text: str) -> str:
+    """Convert text to URL-safe slug"""
     return text.lower().replace(' ', '-')
 
 @app.filter("currency")
-def currency_filter(value):
+def currency_filter(value: float) -> str:
+    """Format number as currency"""
     return f"${value:.2f}"
 
 @app.filter("ordinal")
-def ordinal_filter(n):
+def ordinal_filter(n: int) -> str:
+    """Convert number to ordinal (1st, 2nd, etc)"""
     if n % 10 == 1 and n % 100 != 11:
         return f"{n}st"
     elif n % 10 == 2 and n % 100 != 12:
@@ -296,6 +362,15 @@ def ordinal_filter(n):
     else:
         return f"{n}th"
 ```
+
+### Filter Return Types
+
+| Filter | Input Type | Output Type |
+|--------|-----------|-------------|
+| markdown | `str` | `str` (HTML) |
+| slugify | `str` | `str` |
+| currency | `float` | `str` |
+| ordinal | `int` | `str` |
 
 ### Using Custom Filters
 
@@ -308,25 +383,6 @@ def ordinal_filter(n):
 
 !!! tip "Filter Naming"
     Use lowercase, descriptive names for your filters. Always test them before using in production.
-
-## Best Practices
-
-!!! warning "Security: XSS Prevention"
-    By default, Jinja2 does NOT auto-escape HTML. Be careful with user input:
-    
-    ```html
-    {# Good: escapes HTML #}
-    {{ user_input | escape }}
-    
-    {# Or use auto-escaping in Python #}
-    from markupsafe import escape
-    escaped = escape(user_input)
-    ```
-
-!!! tip "Keep Logic Simple"
-    Keep complex logic in Python, not templates:
-    
-    ```html
     {# Bad: Complex logic in template #}
     {% if user and user.is_active and user.role == 'admin' and user.permissions.can_edit %}
     
