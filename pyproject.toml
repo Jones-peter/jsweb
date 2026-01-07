@@ -89,6 +89,7 @@ jsweb = [
     "templates/*.html",
     "static/*.css",
     "static/*.js",
+    "static/*.png",
     
     # Project generation templates
     "project_templates/*.jinja",
