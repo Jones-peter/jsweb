@@ -363,7 +363,7 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 ---
 
 <p align="center">
-  Made with ❤️ by the JsWeb team<br>
+  Made and Maintained by the JsWeb team<br>
   <a href="https://discord.gg/cqg5wgEVhP" target="_blank">Join our Discord community</a> • 
   <a href="https://github.com/sponsors/Jones-peter" target="_blank">Sponsor us</a>
 </p>
