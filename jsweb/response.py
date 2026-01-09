@@ -1,9 +1,7 @@
-from datetime import datetime
 import json as pyjson
 import logging
 import os
-import re
-from typing import List, Union
+from datetime import datetime
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 
@@ -12,7 +10,7 @@ logger = logging.getLogger(__name__)
 _JSWEB_SCRIPT_CONTENT = ""
 try:
     script_path = os.path.join(os.path.dirname(__file__), "static", "jsweb.js")
-    with open(script_path, "r") as f:
+    with open(script_path) as f:
         _JSWEB_SCRIPT_CONTENT = f.read()
 except FileNotFoundError:
     logger.warning("jsweb.js not found. Automatic AJAX functionality will be disabled.")
@@ -20,7 +18,7 @@ except FileNotFoundError:
 _template_env = None
 
 
-def configure_template_env(template_paths: Union[str, List[str]]):
+def configure_template_env(template_paths: str | list[str]):
     """
     Configures the global Jinja2 template environment.
 
@@ -108,7 +106,7 @@ class Response:
 
     def __init__(
         self,
-        body: Union[str, bytes],
+        body: str | bytes,
         status_code: int = 200,
         headers: dict = None,
         content_type: str = None,

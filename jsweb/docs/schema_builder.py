@@ -5,7 +5,7 @@ Generates complete OpenAPI specification from registry metadata.
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .registry import RouteMetadata, openapi_registry
 
@@ -24,10 +24,10 @@ class OpenAPISchemaBuilder:
         version: str = "1.0.0",
         description: str = "",
         terms_of_service: str = None,
-        contact: Dict[str, str] = None,
-        license_info: Dict[str, str] = None,
-        servers: List[Dict[str, str]] = None,
-        tags: List[Dict[str, Any]] = None,
+        contact: dict[str, str] = None,
+        license_info: dict[str, str] = None,
+        servers: list[dict[str, str]] = None,
+        tags: list[dict[str, Any]] = None,
     ):
         """
         Initialize schema builder.
@@ -51,7 +51,7 @@ class OpenAPISchemaBuilder:
         self.servers = servers or [{"url": "/", "description": "Current server"}]
         self.tags = tags or []
 
-    def build(self) -> Dict[str, Any]:
+    def build(self) -> dict[str, Any]:
         """
         Generate complete OpenAPI 3.0 specification.
 
@@ -71,7 +71,7 @@ class OpenAPISchemaBuilder:
 
         return spec
 
-    def _build_info(self) -> Dict[str, Any]:
+    def _build_info(self) -> dict[str, Any]:
         """Build info object."""
         info = {
             "title": self.title,
@@ -89,11 +89,11 @@ class OpenAPISchemaBuilder:
 
         return info
 
-    def _build_paths(self) -> Dict[str, Any]:
+    def _build_paths(self) -> dict[str, Any]:
         """Build paths object from registered routes."""
         paths = {}
 
-        for handler, metadata in openapi_registry.all_routes().items():
+        for _handler, metadata in openapi_registry.all_routes().items():
             if not metadata.path:
                 # Skip routes without path (not yet introspected)
                 continue
@@ -115,7 +115,7 @@ class OpenAPISchemaBuilder:
 
         return paths
 
-    def _build_operation(self, metadata: RouteMetadata) -> Dict[str, Any]:
+    def _build_operation(self, metadata: RouteMetadata) -> dict[str, Any]:
         """Build OpenAPI operation object."""
         operation = {}
 
@@ -169,7 +169,7 @@ class OpenAPISchemaBuilder:
 
         return operation
 
-    def _build_parameter(self, param) -> Dict[str, Any]:
+    def _build_parameter(self, param) -> dict[str, Any]:
         """Build OpenAPI parameter object."""
         param_obj = {
             "name": param.name,
@@ -187,7 +187,7 @@ class OpenAPISchemaBuilder:
 
         return param_obj
 
-    def _build_response(self, response) -> Dict[str, Any]:
+    def _build_response(self, response) -> dict[str, Any]:
         """Build OpenAPI response object."""
         resp_obj = {"description": response.description}
 
@@ -199,7 +199,7 @@ class OpenAPISchemaBuilder:
 
         return resp_obj
 
-    def _build_components(self) -> Dict[str, Any]:
+    def _build_components(self) -> dict[str, Any]:
         """Build components object (schemas, security schemes, etc.)."""
         components = {}
 

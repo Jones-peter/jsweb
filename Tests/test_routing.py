@@ -257,7 +257,7 @@ def test_dynamic_route_performance():
     # Add 10 dynamic routes
     for i in range(10):
         router.add_route(
-            f"/users/<int:user_id>/posts/<int:post_id>",
+            "/users/<int:user_id>/posts/<int:post_id>",
             lambda req: "OK",
             endpoint=f"user_post_{i}",
         )

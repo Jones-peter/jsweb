@@ -99,9 +99,9 @@ class IntegerField(Field):
             return
         try:
             self.data = int(value)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError) as err:
             self.data = None
-            raise ValidationError("Not a valid integer.")
+            raise ValidationError("Not a valid integer.") from err
 
     def __call__(self, **kwargs):
         """Render the field as a number input."""
@@ -259,7 +259,7 @@ class Form:
     def validate(self):
         """Validate all fields in the form."""
         success = True
-        for name, field in self._fields.items():
+        for _name, field in self._fields.items():
             if not field.errors:
                 if not field.validate(self):
                     success = False

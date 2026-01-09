@@ -1,7 +1,7 @@
 """Tests for new JsWeb features (JSON parsing, file uploads, validators)."""
 
-from io import BytesIO
 import json
+from io import BytesIO
 
 import pytest
 

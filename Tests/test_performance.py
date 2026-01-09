@@ -86,7 +86,8 @@ def test_jsweb_routing_accuracy_with_dynamic_routes():
 def test_starlette_routing_performance():
     """Benchmark Starlette routing performance (if available)."""
     try:
-        from starlette.routing import Route, Router as StarletteRouter
+        from starlette.routing import Route
+        from starlette.routing import Router as StarletteRouter
     except ImportError:
         pytest.skip("Starlette not installed")
 

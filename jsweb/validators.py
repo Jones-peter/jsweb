@@ -119,8 +119,8 @@ class EqualTo:
         """
         try:
             other = form[self.fieldname]
-        except KeyError:
-            raise ValidationError(f"Invalid field name '{self.fieldname}'.")
+        except KeyError as err:
+            raise ValidationError(f"Invalid field name '{self.fieldname}'.") from err
         if field.data != other.data:
             message = self.message
             if message is None:

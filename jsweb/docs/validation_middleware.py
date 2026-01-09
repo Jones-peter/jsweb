@@ -6,9 +6,6 @@ when @api_body decorator is used.
 """
 
 from jsweb.request import Request
-from jsweb.response import JSONResponse
-
-from .registry import openapi_registry
 
 
 class ValidationMiddleware:
@@ -32,7 +29,7 @@ class ValidationMiddleware:
             return
 
         # Create request object to inspect
-        request = Request(scope, receive, send)
+        _request = Request(scope, receive, send)
 
         # Find route metadata
         # Note: This requires access to the handler which we don't have here

@@ -1,6 +1,6 @@
 import re
-from typing import Callable, Dict, List, Optional
 import uuid
+from collections.abc import Callable
 
 
 class NotFound(Exception):
@@ -15,7 +15,7 @@ class MethodNotAllowed(Exception):
     pass
 
 
-def _int_converter(value: str) -> Optional[int]:
+def _int_converter(value: str) -> int | None:
     """
     Converts a string to an integer. Handles negative numbers with validation.
 
@@ -46,7 +46,7 @@ def _int_converter(value: str) -> Optional[int]:
         return None
 
 
-def _float_converter(value: str) -> Optional[float]:
+def _float_converter(value: str) -> float | None:
     """
     Converts a string to a float.
 
@@ -62,7 +62,7 @@ def _float_converter(value: str) -> Optional[float]:
         return None
 
 
-def _uuid_converter(value: str) -> Optional[uuid.UUID]:
+def _uuid_converter(value: str) -> uuid.UUID | None:
     """
     Converts a string to a UUID.
 
@@ -78,7 +78,7 @@ def _uuid_converter(value: str) -> Optional[uuid.UUID]:
         return None
 
 
-def _str_converter(value: str) -> Optional[str]:
+def _str_converter(value: str) -> str | None:
     """
     A converter for string parameters with length validation.
 
@@ -94,7 +94,7 @@ def _str_converter(value: str) -> Optional[str]:
     return value
 
 
-def _path_converter(value: str) -> Optional[str]:
+def _path_converter(value: str) -> str | None:
     """
     A converter for path parameters with length validation.
     Can include slashes.
@@ -148,7 +148,7 @@ class Route:
         "path": (_path_converter, r".+?"),
     }
 
-    def __init__(self, path: str, handler: Callable, methods: List[str], endpoint: str):
+    def __init__(self, path: str, handler: Callable, methods: list[str], endpoint: str):
         self.path = path
         self.handler = handler
         self.methods = methods
@@ -188,7 +188,7 @@ class Route:
 
         return re.compile(regex_path), param_names
 
-    def match(self, path: str) -> Optional[Dict[str, any]]:
+    def match(self, path: str) -> dict[str, any] | None:
         """
         Matches the given path against the route and extracts parameters.
 
@@ -227,16 +227,16 @@ class Router:
     """
 
     def __init__(self):
-        self.static_routes: Dict[str, Route] = {}
-        self.dynamic_routes: List[Route] = []
-        self.endpoints: Dict[str, Route] = {}
+        self.static_routes: dict[str, Route] = {}
+        self.dynamic_routes: list[Route] = []
+        self.endpoints: dict[str, Route] = {}
 
     def add_route(
         self,
         path: str,
         handler: Callable,
-        methods: Optional[List[str]] = None,
-        endpoint: Optional[str] = None,
+        methods: list[str] | None = None,
+        endpoint: str | None = None,
     ):
         """
         Adds a new route to the router.
@@ -271,8 +271,8 @@ class Router:
     def route(
         self,
         path: str,
-        methods: Optional[List[str]] = None,
-        endpoint: Optional[str] = None,
+        methods: list[str] | None = None,
+        endpoint: str | None = None,
     ):
         """
         A decorator to register a view function for a given URL path.
@@ -297,7 +297,7 @@ class Router:
 
         return decorator
 
-    def resolve(self, path: str, method: str) -> (Callable, Dict[str, any]):
+    def resolve(self, path: str, method: str) -> (Callable, dict[str, any]):
         """
         Finds the handler and parameters for a given path and HTTP method.
 

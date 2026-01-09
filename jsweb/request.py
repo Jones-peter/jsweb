@@ -1,6 +1,6 @@
 import asyncio
-from io import BytesIO
 import json
+from io import BytesIO
 from urllib.parse import parse_qs
 
 from werkzeug.formparser import parse_form_data
@@ -275,7 +275,7 @@ class UploadedFile:
             size = self.file_storage.stream.tell()
             self.file_storage.stream.seek(current_pos)
             return size
-        except (OSError, IOError, AttributeError):
+        except (OSError, AttributeError):
             if self._cached_content is not None:
                 return len(self._cached_content)
             try:

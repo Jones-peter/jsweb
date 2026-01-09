@@ -5,7 +5,7 @@ This module provides one-line setup functions for enabling
 automatic API documentation with Swagger UI and ReDoc.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .introspection import introspect_app_routes
 from .registry import openapi_registry
@@ -24,10 +24,10 @@ def configure_openapi(
     version: str = "1.0.0",
     description: str = "",
     terms_of_service: str = None,
-    contact: Dict[str, str] = None,
-    license_info: Dict[str, str] = None,
-    servers: List[Dict[str, str]] = None,
-    tags: List[Dict[str, Any]] = None,
+    contact: dict[str, str] = None,
+    license_info: dict[str, str] = None,
+    servers: list[dict[str, str]] = None,
+    tags: list[dict[str, Any]] = None,
 ) -> OpenAPISchemaBuilder:
     """
     Configure OpenAPI documentation settings.
@@ -90,7 +90,7 @@ def setup_openapi_docs(
     redoc_url: str = "/redoc",
     rapidoc_url: str = None,
     openapi_url: str = "/openapi.json",
-    security_schemes: Dict[str, Dict] = None,
+    security_schemes: dict[str, dict] = None,
     **kwargs,
 ):
     """
@@ -163,7 +163,7 @@ def setup_openapi_docs(
         app.route(rapidoc_url, methods=["GET"])(rapidoc_handler)
 
     # Print documentation URLs (ASCII-safe for Windows terminals)
-    print(f"\n[*] OpenAPI documentation enabled:")
+    print("\n[*] OpenAPI documentation enabled:")
     if docs_url:
         print(f"   > Swagger UI: {docs_url}")
     if redoc_url:
@@ -181,7 +181,7 @@ def add_security_scheme(
     type: str,
     scheme: str = None,
     bearer_format: str = None,
-    flows: Dict = None,
+    flows: dict = None,
     **kwargs,
 ):
     """

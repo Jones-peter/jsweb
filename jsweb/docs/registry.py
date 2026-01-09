@@ -2,9 +2,11 @@
 OpenAPI metadata registry - Central storage for all route documentation
 """
 
-from dataclasses import dataclass, field as dataclass_field
+from collections.abc import Callable
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from threading import RLock
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any
 
 
 @dataclass
@@ -13,7 +15,7 @@ class ParameterMetadata:
 
     name: str
     location: str  # 'path', 'query', 'header', 'cookie'
-    schema: Dict[str, Any]
+    schema: dict[str, Any]
     required: bool = True
     description: str = ""
     deprecated: bool = False
@@ -25,10 +27,10 @@ class RequestBodyMetadata:
     """OpenAPI request body definition."""
 
     content_type: str  # 'application/json', 'multipart/form-data', etc.
-    schema: Dict[str, Any]
+    schema: dict[str, Any]
     description: str = ""
     required: bool = True
-    dto_class: Optional[Type] = None  # Store DTO class for validation
+    dto_class: type | None = None  # Store DTO class for validation
 
 
 @dataclass
@@ -37,9 +39,9 @@ class ResponseMetadata:
 
     status_code: int
     description: str
-    content: Optional[Dict[str, Dict]] = None  # {'application/json': {'schema': {...}}}
-    headers: Optional[Dict[str, Dict]] = None
-    dto_class: Optional[Type] = None  # Store DTO class for serialization
+    content: dict[str, dict] | None = None  # {'application/json': {'schema': {...}}}
+    headers: dict[str, dict] | None = None
+    dto_class: type | None = None  # Store DTO class for serialization
 
 
 @dataclass
@@ -53,21 +55,21 @@ class RouteMetadata:
     endpoint: str = ""
 
     # OpenAPI operation fields
-    summary: Optional[str] = None
-    description: Optional[str] = None
-    tags: List[str] = dataclass_field(default_factory=list)
-    operation_id: Optional[str] = None
+    summary: str | None = None
+    description: str | None = None
+    tags: list[str] = dataclass_field(default_factory=list)
+    operation_id: str | None = None
     deprecated: bool = False
 
     # Parameters and body
-    parameters: List[ParameterMetadata] = dataclass_field(default_factory=list)
-    request_body: Optional[RequestBodyMetadata] = None
+    parameters: list[ParameterMetadata] = dataclass_field(default_factory=list)
+    request_body: RequestBodyMetadata | None = None
 
     # Responses
-    responses: Dict[int, ResponseMetadata] = dataclass_field(default_factory=dict)
+    responses: dict[int, ResponseMetadata] = dataclass_field(default_factory=dict)
 
     # Security
-    security: List[Dict[str, List[str]]] = dataclass_field(default_factory=list)
+    security: list[dict[str, list[str]]] = dataclass_field(default_factory=list)
 
 
 class OpenAPIRegistry:
@@ -78,9 +80,9 @@ class OpenAPIRegistry:
     """
 
     def __init__(self):
-        self._routes: Dict[Callable, RouteMetadata] = {}
-        self._schemas: Dict[str, Dict] = {}
-        self._security_schemes: Dict[str, Dict] = {}
+        self._routes: dict[Callable, RouteMetadata] = {}
+        self._schemas: dict[str, dict] = {}
+        self._security_schemes: dict[str, dict] = {}
         self._lock = RLock()
 
     def register_route(self, handler: Callable, metadata: RouteMetadata = None):
@@ -94,7 +96,7 @@ class OpenAPIRegistry:
             else:
                 self._routes[handler] = metadata
 
-    def get_route(self, handler: Callable) -> Optional[RouteMetadata]:
+    def get_route(self, handler: Callable) -> RouteMetadata | None:
         """Get metadata for a route handler."""
         return self._routes.get(handler)
 
@@ -106,33 +108,33 @@ class OpenAPIRegistry:
                 self._routes[handler] = metadata
             return self._routes[handler]
 
-    def all_routes(self) -> Dict[Callable, RouteMetadata]:
+    def all_routes(self) -> dict[Callable, RouteMetadata]:
         """Get all registered routes."""
         return self._routes.copy()
 
-    def register_schema(self, name: str, schema: Dict[str, Any]):
+    def register_schema(self, name: str, schema: dict[str, Any]):
         """Register a reusable schema component."""
         with self._lock:
             self._schemas[name] = schema
 
-    def get_schema(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_schema(self, name: str) -> dict[str, Any] | None:
         """Get a registered schema by name."""
         return self._schemas.get(name)
 
-    def all_schemas(self) -> Dict[str, Dict]:
+    def all_schemas(self) -> dict[str, dict]:
         """Get all registered schemas."""
         return self._schemas.copy()
 
-    def add_security_scheme(self, name: str, scheme: Dict[str, Any]):
+    def add_security_scheme(self, name: str, scheme: dict[str, Any]):
         """Register a security scheme (Bearer, OAuth2, etc.)."""
         with self._lock:
             self._security_schemes[name] = scheme
 
-    def get_security_scheme(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_security_scheme(self, name: str) -> dict[str, Any] | None:
         """Get a security scheme by name."""
         return self._security_schemes.get(name)
 
-    def all_security_schemes(self) -> Dict[str, Dict]:
+    def all_security_schemes(self) -> dict[str, dict]:
         """Get all registered security schemes."""
         return self._security_schemes.copy()
 

@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Tuple
+from collections.abc import Callable
 
 
 class Blueprint:
@@ -13,9 +13,9 @@ class Blueprint:
     def __init__(
         self,
         name: str,
-        url_prefix: Optional[str] = None,
-        static_folder: Optional[str] = None,
-        static_url_path: Optional[str] = None,
+        url_prefix: str | None = None,
+        static_folder: str | None = None,
+        static_url_path: str | None = None,
     ):
         """
         Initializes a new Blueprint.
@@ -32,7 +32,7 @@ class Blueprint:
         """
         self.name = name
         self.url_prefix = url_prefix
-        self.routes: List[Tuple[str, Callable, List[str], str]] = []
+        self.routes: list[tuple[str, Callable, list[str], str]] = []
         self.static_folder = static_folder
         self.static_url_path = static_url_path
 
@@ -40,8 +40,8 @@ class Blueprint:
         self,
         path: str,
         handler: Callable,
-        methods: Optional[List[str]] = None,
-        endpoint: Optional[str] = None,
+        methods: list[str] | None = None,
+        endpoint: str | None = None,
     ):
         """
         Programmatically adds a route to the blueprint.
@@ -67,8 +67,8 @@ class Blueprint:
     def route(
         self,
         path: str,
-        methods: Optional[List[str]] = None,
-        endpoint: Optional[str] = None,
+        methods: list[str] | None = None,
+        endpoint: str | None = None,
     ) -> Callable:
         """
         A decorator to register a view function for a given path within the blueprint.

@@ -57,9 +57,7 @@ dev = [
     "black>=24.0",
     "isort>=5.12",
     # Linting
-    "flake8>=7.0",
-    "flake8-bugbear>=23.0",
-    "flake8-comprehensions>=3.14",
+    "ruff>=0.4",
     # Type checking
     "mypy>=1.7",
     # Security scanning
@@ -158,13 +156,38 @@ exclude = '''
 )/
 '''
 
-[tool.isort]
-profile = "black"
-line_length = 88
-known_first_party = ["jsweb"]
-combine_as_imports = true
-force_sort_within_sections = true
-include_trailing_comma = true
-multi_line_output = 3
+[tool.ruff]
+line-length = 88
+target-version = "py311"  # adjust if needed
+fix = false
 
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    "venv",
+]
 
+# Linter configuration
+[tool.ruff.lint]
+# Enable important rule sets
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "B",   # bugbear
+    "I",   # import sorting (replaces isort)
+    "UP",  # pyupgrade
+]
+
+# Ignore noise & Black conflicts
+ignore = [
+    "E203",  # Black-compatible
+    "E501",  # Line length handled by Black
+]
+
+# Per-file exceptions (framework-friendly)
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"Tests/*" = ["F401", "B007", "E731"]

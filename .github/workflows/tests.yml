@@ -73,11 +73,8 @@ jobs:
       - name: Run black (code formatting check)
         run: black --check jsweb Tests
 
-      - name: Run isort (import sorting check)
-        run: isort --check-only jsweb Tests
-
-      - name: Run flake8 (linting)
-        run: flake8 jsweb Tests
+      - name: Run Ruff (lint & import check)
+        run: ruff check jsweb Tests
 
       - name: Run mypy (type checking)
         run: mypy jsweb --ignore-missing-imports --no-error-summary 2>/dev/null || true

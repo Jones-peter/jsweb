@@ -2,14 +2,17 @@
 DTO models - Pydantic internally, jsweb API externally
 """
 
-import inspect
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints
+from typing import Any
 
 from pydantic import (
     BaseModel as PydanticBaseModel,
+)
+from pydantic import (
     ConfigDict,
-    Field as PydanticField,
     ValidationError,
+)
+from pydantic import (
+    Field as PydanticField,
 )
 
 
@@ -51,7 +54,7 @@ class JswebBaseModel(PydanticBaseModel):
     @classmethod
     def openapi_schema(
         cls, *, ref_template: str = "#/components/schemas/{model}"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate OpenAPI 3.0 schema for this model.
 
@@ -70,7 +73,7 @@ class JswebBaseModel(PydanticBaseModel):
         return schema
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "JswebBaseModel":
+    def from_dict(cls, data: dict[str, Any]) -> "JswebBaseModel":
         """
         Create model instance from dictionary with validation.
 
@@ -87,7 +90,7 @@ class JswebBaseModel(PydanticBaseModel):
 
     def to_dict(
         self, *, exclude_none: bool = False, by_alias: bool = False
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Convert model to dictionary.
 
@@ -119,7 +122,7 @@ class JswebBaseModel(PydanticBaseModel):
         )
 
     @classmethod
-    def openapi_examples(cls) -> List[Dict[str, Any]]:
+    def openapi_examples(cls) -> list[dict[str, Any]]:
         """
         Get OpenAPI examples for this model.
         Override this method to provide custom examples.
@@ -144,23 +147,23 @@ def Field(
     default: Any = ...,
     *,
     # Validation constraints
-    gt: Optional[float] = None,
-    ge: Optional[float] = None,
-    lt: Optional[float] = None,
-    le: Optional[float] = None,
-    multiple_of: Optional[float] = None,
-    min_length: Optional[int] = None,
-    max_length: Optional[int] = None,
-    pattern: Optional[str] = None,
+    gt: float | None = None,
+    ge: float | None = None,
+    lt: float | None = None,
+    le: float | None = None,
+    multiple_of: float | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    pattern: str | None = None,
     # OpenAPI metadata
-    title: Optional[str] = None,
-    description: Optional[str] = None,
+    title: str | None = None,
+    description: str | None = None,
     example: Any = None,
-    examples: Optional[List[Any]] = None,
+    examples: list[Any] | None = None,
     deprecated: bool = False,
     # Field behavior
-    alias: Optional[str] = None,
-    default_factory: Optional[callable] = None,
+    alias: str | None = None,
+    default_factory: callable | None = None,
     # Custom extensions
     **extra: Any,
 ) -> Any:

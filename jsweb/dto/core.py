@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Any, Dict, TypeVar
+from typing import Any, TypeVar
+
+from .core import JswebBaseModel
 
 # Type variables
 T = TypeVar("T")
@@ -38,11 +40,11 @@ class FieldMetadata:
         for attr in self.__slots__:
             setattr(self, attr, kwargs.get(attr))
 
-    def to_openapi(self) -> Dict[str, Any]:
+    def to_openapi(self) -> dict[str, Any]:
         """
         Convert metadata to OpenAPI-compatible dictionary.
         """
-        result: Dict[str, Any] = {}
+        result: dict[str, Any] = {}
 
         standard_mapping = {
             "description": "description",

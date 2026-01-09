@@ -97,7 +97,7 @@ class JsWebApp:
             response = JSONResponse({"error": str(e)}, status_code=405)
             await response(scope, receive, send)
             return
-        except Exception as e:
+        except Exception:
             response = JSONResponse({"error": "Internal Server Error"}, status_code=500)
             await response(scope, receive, send)
             return

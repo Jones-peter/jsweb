@@ -1,7 +1,7 @@
 """Tests for JsWeb request and response handling."""
 
-from io import BytesIO
 import json
+from io import BytesIO
 
 import pytest
 
@@ -376,7 +376,7 @@ def test_response_string_conversion():
     from jsweb.response import Response
 
     response = Response("Test content")
-    response_str = str(response)
+    _response_str = str(response)
 
     assert response is not None
 

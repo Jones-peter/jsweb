@@ -6,13 +6,11 @@ with option to disable if needed.
 """
 
 from functools import wraps
-import inspect
-from typing import Type, get_type_hints
 
 from pydantic import ValidationError as PydanticValidationError
 
 
-def validate_request_body(dto_class: Type):
+def validate_request_body(dto_class: type):
     """
     Decorator that automatically validates request body against a DTO.
 
@@ -84,7 +82,7 @@ def validate_request_body(dto_class: Type):
     return decorator
 
 
-def auto_serialize_response(dto_class: Type, status_code: int = 200):
+def auto_serialize_response(dto_class: type, status_code: int = 200):
     """
     Decorator that automatically serializes DTO responses to JSON.
 

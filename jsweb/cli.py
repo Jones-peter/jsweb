@@ -135,7 +135,7 @@ def create_project(name):
         ),
     }
     for src, dest in text_files_to_copy.items():
-        with open(src, "r", encoding="utf-8") as f_src:
+        with open(src, encoding="utf-8") as f_src:
             content = f_src.read()
         with open(dest, "w", encoding="utf-8") as f_dest:
             f_dest.write(content)
@@ -596,7 +596,7 @@ def cli():
                 logger.info(f"💬 Auto-generated message: {message}")
 
             command.revision(alembic_cfg, autogenerate=True, message=message)
-            logger.info(f"✅ Migration script prepared.")
+            logger.info("✅ Migration script prepared.")
 
         elif args.subcommand == "upgrade":
             command.upgrade(alembic_cfg, "head")

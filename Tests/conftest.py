@@ -1,8 +1,8 @@
 """Pytest configuration and shared fixtures for jsweb tests."""
 
+import sys
 from io import BytesIO
 from pathlib import Path
-import sys
 
 import pytest
 
@@ -128,7 +128,7 @@ def file_upload_environ(fake_environ):
         f"\r\n"
         f"test file content\r\n"
         f"--{boundary}--\r\n"
-    ).encode("utf-8")
+    ).encode()
 
     return fake_environ(
         method="POST",

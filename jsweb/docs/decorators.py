@@ -4,7 +4,7 @@ Decorators for API documentation
 These decorators allow developers to add rich OpenAPI documentation to their routes.
 """
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from .registry import (
     ParameterMetadata,
@@ -59,11 +59,11 @@ def api_operation(
 
 def api_response(
     status_code: int,
-    dto: Type = None,
+    dto: type = None,
     description: str = "",
     content_type: str = "application/json",
-    examples: Dict[str, Any] = None,
-    headers: Dict[str, Dict] = None,
+    examples: dict[str, Any] = None,
+    headers: dict[str, dict] = None,
 ):
     """
     Document an API response (NestJS-style).
@@ -117,11 +117,11 @@ def api_response(
 
 
 def api_body(
-    dto: Type,
+    dto: type,
     description: str = "",
     content_type: str = "application/json",
     required: bool = True,
-    examples: Dict[str, Any] = None,
+    examples: dict[str, Any] = None,
     auto_validate: bool = True,  # NEW: Enable/disable automatic validation
 ):
     """
@@ -198,7 +198,7 @@ def api_body(
 def api_query(
     name: str,
     *,
-    type: Type = str,
+    type: type = str,
     required: bool = False,
     description: str = "",
     example: Any = None,
@@ -253,7 +253,7 @@ def api_query(
 def api_header(
     name: str,
     *,
-    type: Type = str,
+    type: type = str,
     required: bool = False,
     description: str = "",
     example: Any = None,
@@ -303,7 +303,7 @@ def api_header(
     return decorator
 
 
-def api_security(*schemes: str, scopes: List[str] = None):
+def api_security(*schemes: str, scopes: list[str] = None):
     """
     Apply security requirements to an operation
 
@@ -364,7 +364,7 @@ def api_tags(*tags: str):
     return decorator
 
 
-def _type_to_schema(py_type: Type, **kwargs) -> Dict[str, Any]:
+def _type_to_schema(py_type: type, **kwargs) -> dict[str, Any]:
     """
     Convert Python type to OpenAPI schema.
 

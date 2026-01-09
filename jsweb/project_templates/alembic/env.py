@@ -3,6 +3,11 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+# --- JSWEB MODIFICATION ---
+# Import the Base from the framework's database module.
+# This ensures that autogenerate detects models that inherit from ModelBase.
+from jsweb.database import ModelBase
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -12,10 +17,6 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# --- JSWEB MODIFICATION ---
-# Import the Base from the framework's database module.
-# This ensures that autogenerate detects models that inherit from ModelBase.
-from jsweb.database import ModelBase
 
 target_metadata = ModelBase.metadata
 # --- END JSWEB MODIFICATION ---

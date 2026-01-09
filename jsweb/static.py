@@ -4,7 +4,6 @@ This module provides functionality for serving static files from the filesystem.
 
 import mimetypes
 import os
-from typing import Union
 
 from .response import HTMLResponse, Response
 
@@ -43,7 +42,7 @@ def serve_static(request_path: str, static_url: str, static_dir: str) -> Respons
     try:
         with open(full_path, "rb") as f:
             content = f.read()
-    except IOError:
+    except OSError:
         return HTMLResponse("500 Internal Server Error", status_code=500)
 
     content_type = mimetypes.guess_type(full_path)[0] or "application/octet-stream"
