@@ -155,12 +155,14 @@ class SelectField(Field):
         kwargs.setdefault('id', self.name)
         kwargs.setdefault('name', self.name)
 
-        html = [f'<select {Markup(" ".join(f"{k}=\"{v}\"" for k, v in kwargs.items()))}>']
+        attrs_str = " ".join(f'{k}="{v}"' for k, v in kwargs.items())
+        html = [f'<select {attrs_str}>']
         for value, label, selected in self:
             option_attrs = {'value': value}
             if selected:
                 option_attrs['selected'] = 'selected'
-            html.append(f'<option {" ".join(f"{k}=\"{v}\"" for k, v in option_attrs.items())}>{label}</option>')
+            option_attrs_str = " ".join(f'{k}="{v}"' for k, v in option_attrs.items())
+            html.append(f'<option {option_attrs_str}>{label}</option>')
         html.append('</select>')
         return Markup(''.join(html))
 
