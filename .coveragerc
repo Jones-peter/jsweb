@@ -1,0 +1,35 @@
+[run]
+source = jsweb
+branch = True
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */venv/*
+    */.venv/*
+    setup.py
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    pass
+    ...
+    except ImportError:
+    except KeyboardInterrupt:
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

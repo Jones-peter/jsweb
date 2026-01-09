@@ -76,8 +76,8 @@ jsweb = "jsweb.cli:cli"
 
 [project.urls]
 Documentation = "https://jsweb-framework.site/"
-Homepage = "https://github.com/Jones-peter/jsweb"
-"Bug Tracker" = "https://github.com/Jones-peter/jsweb/issues"
+Homepage = "https://github.com/Jsweb-Tech/jsweb"
+"Bug Tracker" = "https://github.com/Jsweb-Tech/jsweb/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -100,3 +100,45 @@ jsweb = [
     "admin/templates/*.html",
     "admin/static/*"
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --strict-markers --tb=short --cov=jsweb --cov-report=html --cov-report=term-missing"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Tests that take a long time to run",
+    "asyncio: Async tests"
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["jsweb"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@abstractmethod"
+]
+precision = 2
+skip_covered = false
+skip_empty = true
+
+[tool.coverage.html]
+directory = "htmlcov"
