@@ -7,8 +7,8 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    create_engine,
     UniqueConstraint,
+    create_engine,
 )
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.inspection import inspect
@@ -58,6 +58,7 @@ def get_engine():
 
 class DatabaseError(Exception):
     """Custom exception raised for database operation failures."""
+
     pass
 
 
@@ -91,6 +92,7 @@ class ModelBase(Base):
     `update()`, and `create()`. It also ensures that all models share the same
     declarative base.
     """
+
     __abstract__ = True
 
     @classmethod
@@ -159,8 +161,20 @@ class ModelBase(Base):
 
 
 __all__ = [
-    "init_db", "get_engine", "db_session", "ModelBase", "Base",
+    "init_db",
+    "get_engine",
+    "db_session",
+    "ModelBase",
+    "Base",
     "DatabaseError",
-    "Integer", "String", "Float", "Boolean", "DateTime", "Text",
-    "Column", "ForeignKey", "relationship", "UniqueConstraint"
+    "Integer",
+    "String",
+    "Float",
+    "Boolean",
+    "DateTime",
+    "Text",
+    "Column",
+    "ForeignKey",
+    "relationship",
+    "UniqueConstraint",
 ]

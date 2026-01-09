@@ -1,9 +1,11 @@
-import secrets
 import logging
-from .static import serve_static
+import secrets
+
 from .response import Forbidden
+from .static import serve_static
 
 logger = logging.getLogger(__name__)
+
 
 class Middleware:
     """
@@ -12,6 +14,7 @@ class Middleware:
     Args:
         app: The ASGI application to wrap.
     """
+
     def __init__(self, app):
         self.app = app
 
@@ -26,6 +29,7 @@ class Middleware:
         """
         await self.app(scope, receive, send)
 
+
 class CSRFMiddleware(Middleware):
     """
     Middleware to protect against Cross-Site Request Forgery (CSRF) attacks.
@@ -35,6 +39,7 @@ class CSRFMiddleware(Middleware):
     in the request, either in the 'X-CSRF-Token' header or in the request body
     (JSON or Form Data).
     """
+
     async def __call__(self, scope, receive, send):
         """
         Validates the CSRF token for state-changing HTTP methods.
@@ -51,16 +56,14 @@ class CSRFMiddleware(Middleware):
             await self.app(scope, receive, send)
             return
 
-        req = scope['jsweb.request']
+        req = scope["jsweb.request"]
 
         if req.method in ("POST", "PUT", "PATCH", "DELETE"):
             cookie_token = req.cookies.get("csrf_token")
             submitted_token = None
 
-            
             submitted_token = req.headers.get("x-csrf-token")
 
-        
             if not submitted_token:
                 content_type = req.headers.get("content-type", "")
 
@@ -73,7 +76,10 @@ class CSRFMiddleware(Middleware):
                         # If JSON parsing fails, we treat it as no token found
                         pass
 
-                elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+                elif (
+                    "application/x-www-form-urlencoded" in content_type
+                    or "multipart/form-data" in content_type
+                ):
                     try:
                         # Request.form() safely returns {} for empty/non-form bodies
                         form = await req.form()
@@ -82,9 +88,12 @@ class CSRFMiddleware(Middleware):
                         # If form parsing fails, we treat it as no token found
                         pass
 
-            
             # Both the cookie token and the submitted token MUST be present and match.
-            if not cookie_token or not submitted_token or not secrets.compare_digest(submitted_token, cookie_token):
+            if (
+                not cookie_token
+                or not submitted_token
+                or not secrets.compare_digest(submitted_token, cookie_token)
+            ):
                 # Log CSRF failure with context (but never log the actual tokens)
                 client_ip = scope.get("client", ["unknown"])[0]
                 logger.warning(
@@ -99,6 +108,7 @@ class CSRFMiddleware(Middleware):
 
         await self.app(scope, receive, send)
 
+
 class StaticFilesMiddleware(Middleware):
     """
     Middleware for serving static files.
@@ -112,6 +122,7 @@ class StaticFilesMiddleware(Middleware):
         static_dir (str): The directory path for the main application's static files.
         blueprint_statics (list, optional): A list of blueprint static file configurations.
     """
+
     def __init__(self, app, static_url, static_dir, blueprint_statics=None):
         super().__init__(app)
         self.static_url = static_url
@@ -135,7 +146,7 @@ class StaticFilesMiddleware(Middleware):
             await self.app(scope, receive, send)
             return
 
-        req = scope['jsweb.request']
+        req = scope["jsweb.request"]
 
         # Check blueprint static files first
         for bp in self.blueprint_statics:
@@ -152,6 +163,7 @@ class StaticFilesMiddleware(Middleware):
 
         await self.app(scope, receive, send)
 
+
 class DBSessionMiddleware(Middleware):
     """
     Manages the lifecycle of a database session for each HTTP request.
@@ -160,6 +172,7 @@ class DBSessionMiddleware(Middleware):
     the transaction if the request is successful, rolls it back upon an exception,
     and always removes the session at the end of the request.
     """
+
     async def __call__(self, scope, receive, send):
         """
         Wraps the request with a database session scope.
@@ -174,6 +187,7 @@ class DBSessionMiddleware(Middleware):
             return
 
         from .database import db_session
+
         try:
             status_code = None
 
@@ -181,7 +195,7 @@ class DBSessionMiddleware(Middleware):
                 nonlocal status_code
                 if message["type"] == "http.response.start":
                     status_code = message["status"]
-                await send(message )
+                await send(message)
 
             await self.app(scope, receive, send_wrapper)
 

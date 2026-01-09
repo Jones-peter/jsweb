@@ -1,9 +1,12 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
-
 from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+# --- JSWEB MODIFICATION ---
+# Import the Base from the framework's database module.
+# This ensures that autogenerate detects models that inherit from ModelBase.
+from jsweb.database import ModelBase
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -14,12 +17,10 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# --- JSWEB MODIFICATION ---
-# Import the Base from the framework's database module.
-# This ensures that autogenerate detects models that inherit from ModelBase.
-from jsweb.database import ModelBase
+
 target_metadata = ModelBase.metadata
 # --- END JSWEB MODIFICATION ---
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
@@ -61,12 +62,12 @@ def run_migrations_online() -> None:
     with connectable.connect() as connection:
         # --- JSWEB MODIFICATION for SQLite ---
         # Enable batch mode for SQLite to handle ALTER constraints.
-        is_sqlite = connection.dialect.name == 'sqlite'
-        
+        is_sqlite = connection.dialect.name == "sqlite"
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=is_sqlite 
+            render_as_batch=is_sqlite,
         )
         # --- END JSWEB MODIFICATION ---
 

@@ -9,9 +9,8 @@ This module introspects the jsweb app's routes and automatically:
 """
 
 import re
-import inspect
-from typing import Any, Dict
-from .registry import openapi_registry, RouteMetadata, ParameterMetadata
+
+from .registry import ParameterMetadata, RouteMetadata, openapi_registry
 
 
 def introspect_app_routes(app):
@@ -72,7 +71,7 @@ def _extract_summary_from_docstring(handler) -> str:
         First line of docstring or empty string
     """
     if handler.__doc__:
-        lines = handler.__doc__.strip().split('\n')
+        lines = handler.__doc__.strip().split("\n")
         return lines[0].strip() if lines else ""
     return ""
 
@@ -91,33 +90,35 @@ def _add_path_parameters(metadata: RouteMetadata, path: str):
         path: jsweb route path
     """
     # Pattern matches: <int:id>, <str:name>, <path:filepath>, <id>
-    pattern = r'<(?:(\w+):)?(\w+)>'
+    pattern = r"<(?:(\w+):)?(\w+)>"
     matches = re.finditer(pattern, path)
 
     for match in matches:
-        param_type = match.group(1) or 'str'
+        param_type = match.group(1) or "str"
         param_name = match.group(2)
 
         # Check if already documented (user may have added explicitly)
-        if any(p.name == param_name and p.location == 'path' for p in metadata.parameters):
+        if any(
+            p.name == param_name and p.location == "path" for p in metadata.parameters
+        ):
             continue
 
         # Map jsweb types to OpenAPI types
         type_map = {
-            'int': {'type': 'integer', 'format': 'int32'},
-            'str': {'type': 'string'},
-            'path': {'type': 'string'},
-            'float': {'type': 'number', 'format': 'float'},
+            "int": {"type": "integer", "format": "int32"},
+            "str": {"type": "string"},
+            "path": {"type": "string"},
+            "float": {"type": "number", "format": "float"},
         }
 
-        schema = type_map.get(param_type, {'type': 'string'})
+        schema = type_map.get(param_type, {"type": "string"})
 
         param = ParameterMetadata(
             name=param_name,
-            location='path',
+            location="path",
             schema=schema,
             required=True,  # Path parameters are always required
-            description=f"Path parameter: {param_name}"
+            description=f"Path parameter: {param_name}",
         )
 
         metadata.parameters.append(param)
@@ -151,11 +152,11 @@ def _register_dto_schema(dto_class):
     Args:
         dto_class: DTO class (JswebBaseModel subclass)
     """
-    if not hasattr(dto_class, 'openapi_schema'):
+    if not hasattr(dto_class, "openapi_schema"):
         return
 
     # Get model name for schema reference
-    if hasattr(dto_class, 'get_model_name'):
+    if hasattr(dto_class, "get_model_name"):
         schema_name = dto_class.get_model_name()
     else:
         schema_name = dto_class.__name__

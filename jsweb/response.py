@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 import json as pyjson
 import logging
 import os
-import re
 from datetime import datetime
-from typing import List, Union
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 _JSWEB_SCRIPT_CONTENT = ""
 try:
     script_path = os.path.join(os.path.dirname(__file__), "static", "jsweb.js")
-    with open(script_path, "r") as f:
+    with open(script_path) as f:
         _JSWEB_SCRIPT_CONTENT = f.read()
 except FileNotFoundError:
     logger.warning("jsweb.js not found. Automatic AJAX functionality will be disabled.")
@@ -20,7 +20,7 @@ except FileNotFoundError:
 _template_env = None
 
 
-def configure_template_env(template_paths: Union[str, List[str]]):
+def configure_template_env(template_paths: str | list[str]):
     """
     Configures the global Jinja2 template environment.
 
@@ -30,7 +30,7 @@ def configure_template_env(template_paths: Union[str, List[str]]):
     global _template_env
     _template_env = Environment(
         loader=FileSystemLoader(template_paths),
-        autoescape=select_autoescape(['html', 'xml'])
+        autoescape=select_autoescape(["html", "xml"]),
     )
 
 
@@ -52,17 +52,17 @@ def url_for(req, endpoint: str, **kwargs) -> str:
     Returns:
         str: The generated URL.
     """
-    if '.' in endpoint:
-        blueprint_name, static_endpoint = endpoint.split('.', 1)
-        if static_endpoint == 'static':
+    if "." in endpoint:
+        blueprint_name, static_endpoint = endpoint.split(".", 1)
+        if static_endpoint == "static":
             for bp in req.app.blueprints_with_static_files:
                 if bp.name == blueprint_name:
-                    filename = kwargs.get('filename', '')
+                    filename = kwargs.get("filename", "")
                     return f"{bp.static_url_path}/{filename}"
 
-    if endpoint == 'static':
+    if endpoint == "static":
         static_url = getattr(req.app.config, "STATIC_URL", "/static")
-        filename = kwargs.get('filename', '')
+        filename = kwargs.get("filename", "")
         return f"{static_url}/{filename}"
 
     return req.app.router.url_for(endpoint, **kwargs)
@@ -103,35 +103,38 @@ class Response:
         content_type (str, optional): The content type of the response. If not provided,
                                       `default_content_type` is used.
     """
+
     default_content_type = "text/plain"
 
     def __init__(
-            self,
-            body: Union[str, bytes],
-            status_code: int = 200,
-            headers: dict = None,
-            content_type: str = None,
+        self,
+        body: str | bytes,
+        status_code: int = 200,
+        headers: dict = None,
+        content_type: str = None,
     ):
         self.body = body
         self.status_code = status_code
         self.headers = headers or {}
-        self._cookies = []  # Store cookies separately to support multiple Set-Cookie headers
+        self._cookies = (
+            []
+        )  # Store cookies separately to support multiple Set-Cookie headers
 
         final_content_type = content_type or self.default_content_type
         if "content-type" not in self.headers:
             self.headers["content-type"] = final_content_type
 
     def set_cookie(
-            self,
-            key: str,
-            value: str = "",
-            max_age: int = None,
-            expires: datetime = None,
-            path: str = "/",
-            domain: str = None,
-            secure: bool = False,
-            httponly: bool = False,
-            samesite: str = 'Lax',
+        self,
+        key: str,
+        value: str = "",
+        max_age: int = None,
+        expires: datetime = None,
+        path: str = "/",
+        domain: str = None,
+        secure: bool = False,
+        httponly: bool = False,
+        samesite: str = "Lax",
     ):
         """
         Sets a cookie in the response headers.
@@ -189,7 +192,9 @@ class Response:
             receive (callable): The ASGI receive channel.
             send (callable): The ASGI send channel.
         """
-        body_bytes = self.body if isinstance(self.body, bytes) else self.body.encode("utf-8")
+        body_bytes = (
+            self.body if isinstance(self.body, bytes) else self.body.encode("utf-8")
+        )
         if "content-length" not in self.headers:
             self.headers["content-length"] = str(len(body_bytes))
 
@@ -200,15 +205,19 @@ class Response:
         for cookie in self._cookies:
             headers_list.append([b"set-cookie", cookie.encode()])
 
-        await send({
-            "type": "http.response.start",
-            "status": self.status_code,
-            "headers": headers_list,
-        })
-        await send({
-            "type": "http.response.body",
-            "body": body_bytes,
-        })
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self.status_code,
+                "headers": headers_list,
+            }
+        )
+        await send(
+            {
+                "type": "http.response.body",
+                "body": body_bytes,
+            }
+        )
 
 
 class HTMLResponse(Response):
@@ -218,6 +227,7 @@ class HTMLResponse(Response):
     It automatically injects the `jsweb.js` AJAX script into full HTML documents
     to enable seamless client-side navigation.
     """
+
     default_content_type = "text/html"
 
     async def __call__(self, scope, receive, send):
@@ -232,7 +242,9 @@ class HTMLResponse(Response):
             receive (callable): The ASGI receive channel.
             send (callable): The ASGI send channel.
         """
-        body_str = self.body if isinstance(self.body, str) else self.body.decode("utf-8")
+        body_str = (
+            self.body if isinstance(self.body, str) else self.body.decode("utf-8")
+        )
 
         is_full_page = "</html>" in body_str.lower()
         if is_full_page and _JSWEB_SCRIPT_CONTENT:
@@ -240,7 +252,9 @@ class HTMLResponse(Response):
             injection_point = body_str.lower().rfind("</head>")
 
             if injection_point != -1:
-                body_str = body_str[:injection_point] + script_tag + body_str[injection_point:]
+                body_str = (
+                    body_str[:injection_point] + script_tag + body_str[injection_point:]
+                )
 
         self.body = body_str.encode("utf-8")
         await super().__call__(scope, receive, send)
@@ -257,13 +271,14 @@ class JSONResponse(Response):
         status_code (int): The HTTP status code.
         headers (dict, optional): A dictionary of response headers.
     """
+
     default_content_type = "application/json"
 
     def __init__(
-            self,
-            data: any,
-            status_code: int = 200,
-            headers: dict = None,
+        self,
+        data: any,
+        status_code: int = 200,
+        headers: dict = None,
     ):
         body = pyjson.dumps(data)
         super().__init__(body, status_code, headers)
@@ -280,10 +295,10 @@ class RedirectResponse(Response):
     """
 
     def __init__(
-            self,
-            url: str,
-            status_code: int = 302,
-            headers: dict = None,
+        self,
+        url: str,
+        status_code: int = 302,
+        headers: dict = None,
     ):
         super().__init__(body="", status_code=status_code, headers=headers)
         self.headers["location"] = url
@@ -301,7 +316,7 @@ class Forbidden(Response):
         super().__init__(body, status_code=403, content_type="text/html")
 
 
-def render(req, template_name: str, context: dict = None) -> "HTMLResponse":
+def render(req, template_name: str, context: dict = None) -> HTMLResponse:
     """
     Renders a Jinja2 template into an HTMLResponse.
 
@@ -329,7 +344,7 @@ def render(req, template_name: str, context: dict = None) -> "HTMLResponse":
         context = {}
 
     is_ajax = req.headers.get("x-requested-with") == "XMLHttpRequest"
-    context['is_ajax'] = is_ajax
+    context["is_ajax"] = is_ajax
 
     final_template_name = template_name
     if is_ajax:
@@ -340,10 +355,10 @@ def render(req, template_name: str, context: dict = None) -> "HTMLResponse":
         except TemplateNotFound:
             pass
 
-    if hasattr(req, 'csrf_token'):
-        context['csrf_token'] = req.csrf_token
+    if hasattr(req, "csrf_token"):
+        context["csrf_token"] = req.csrf_token
 
-    context['url_for'] = lambda endpoint, **kwargs: url_for(req, endpoint, **kwargs)
+    context["url_for"] = lambda endpoint, **kwargs: url_for(req, endpoint, **kwargs)
 
     template = _template_env.get_template(final_template_name)
     body = template.render(**context)
@@ -380,7 +395,9 @@ def json(data: any, status_code: int = 200, headers: dict = None) -> JSONRespons
     return JSONResponse(data, status_code=status_code, headers=headers)
 
 
-def redirect(url: str, status_code: int = 302, headers: dict = None) -> RedirectResponse:
+def redirect(
+    url: str, status_code: int = 302, headers: dict = None
+) -> RedirectResponse:
     """
     A shortcut function to create a RedirectResponse.
 

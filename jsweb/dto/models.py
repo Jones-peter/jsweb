@@ -2,10 +2,18 @@
 DTO models - Pydantic internally, jsweb API externally
 """
 
-from typing import Any, Dict, List, Optional, Type, Union, get_type_hints
-from pydantic import BaseModel as PydanticBaseModel, Field as PydanticField, ValidationError
-from pydantic import ConfigDict
-import inspect
+from typing import Any
+
+from pydantic import (
+    BaseModel as PydanticBaseModel,
+)
+from pydantic import (
+    ConfigDict,
+    ValidationError,
+)
+from pydantic import (
+    Field as PydanticField,
+)
 
 
 class JswebBaseModel(PydanticBaseModel):
@@ -36,15 +44,17 @@ class JswebBaseModel(PydanticBaseModel):
         # Allow arbitrary types (for custom types)
         arbitrary_types_allowed=True,
         # Extra fields behavior
-        extra='forbid',  # Raise error on extra fields
+        extra="forbid",  # Raise error on extra fields
         # Strict mode for better type safety
         strict=False,  # Allow coercion by default
         # Populate by name (for alias support)
-        populate_by_name=True
+        populate_by_name=True,
     )
 
     @classmethod
-    def openapi_schema(cls, *, ref_template: str = '#/components/schemas/{model}') -> Dict[str, Any]:
+    def openapi_schema(
+        cls, *, ref_template: str = "#/components/schemas/{model}"
+    ) -> dict[str, Any]:
         """
         Generate OpenAPI 3.0 schema for this model.
 
@@ -63,7 +73,7 @@ class JswebBaseModel(PydanticBaseModel):
         return schema
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'JswebBaseModel':
+    def from_dict(cls, data: dict[str, Any]) -> "JswebBaseModel":
         """
         Create model instance from dictionary with validation.
 
@@ -78,7 +88,9 @@ class JswebBaseModel(PydanticBaseModel):
         """
         return cls.model_validate(data)
 
-    def to_dict(self, *, exclude_none: bool = False, by_alias: bool = False) -> Dict[str, Any]:
+    def to_dict(
+        self, *, exclude_none: bool = False, by_alias: bool = False
+    ) -> dict[str, Any]:
         """
         Convert model to dictionary.
 
@@ -91,7 +103,9 @@ class JswebBaseModel(PydanticBaseModel):
         """
         return self.model_dump(exclude_none=exclude_none, by_alias=by_alias)
 
-    def to_json(self, *, exclude_none: bool = False, by_alias: bool = False, indent: int = None) -> str:
+    def to_json(
+        self, *, exclude_none: bool = False, by_alias: bool = False, indent: int = None
+    ) -> str:
         """
         Convert model to JSON string.
 
@@ -104,13 +118,11 @@ class JswebBaseModel(PydanticBaseModel):
             JSON string
         """
         return self.model_dump_json(
-            exclude_none=exclude_none,
-            by_alias=by_alias,
-            indent=indent
+            exclude_none=exclude_none, by_alias=by_alias, indent=indent
         )
 
     @classmethod
-    def openapi_examples(cls) -> List[Dict[str, Any]]:
+    def openapi_examples(cls) -> list[dict[str, Any]]:
         """
         Get OpenAPI examples for this model.
         Override this method to provide custom examples.
@@ -135,28 +147,25 @@ def Field(
     default: Any = ...,
     *,
     # Validation constraints
-    gt: Optional[float] = None,
-    ge: Optional[float] = None,
-    lt: Optional[float] = None,
-    le: Optional[float] = None,
-    multiple_of: Optional[float] = None,
-    min_length: Optional[int] = None,
-    max_length: Optional[int] = None,
-    pattern: Optional[str] = None,
-
+    gt: float | None = None,
+    ge: float | None = None,
+    lt: float | None = None,
+    le: float | None = None,
+    multiple_of: float | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    pattern: str | None = None,
     # OpenAPI metadata
-    title: Optional[str] = None,
-    description: Optional[str] = None,
+    title: str | None = None,
+    description: str | None = None,
     example: Any = None,
-    examples: Optional[List[Any]] = None,
+    examples: list[Any] | None = None,
     deprecated: bool = False,
-
     # Field behavior
-    alias: Optional[str] = None,
-    default_factory: Optional[callable] = None,
-
+    alias: str | None = None,
+    default_factory: callable | None = None,
     # Custom extensions
-    **extra: Any
+    **extra: Any,
 ) -> Any:
     """
     Define a DTO field with validation and OpenAPI metadata.
@@ -207,22 +216,22 @@ def Field(
     """
     # Map jsweb parameters to Pydantic Field parameters
     field_kwargs = {
-        'default': default,
-        'title': title,
-        'description': description,
-        'examples': examples or ([example] if example is not None else None),
-        'deprecated': deprecated if deprecated else None,
-        'alias': alias,
-        'default_factory': default_factory,
-        'gt': gt,
-        'ge': ge,
-        'lt': lt,
-        'le': le,
-        'multiple_of': multiple_of,
-        'min_length': min_length,
-        'max_length': max_length,
-        'pattern': pattern,
-        **extra
+        "default": default,
+        "title": title,
+        "description": description,
+        "examples": examples or ([example] if example is not None else None),
+        "deprecated": deprecated if deprecated else None,
+        "alias": alias,
+        "default_factory": default_factory,
+        "gt": gt,
+        "ge": ge,
+        "lt": lt,
+        "le": le,
+        "multiple_of": multiple_of,
+        "min_length": min_length,
+        "max_length": max_length,
+        "pattern": pattern,
+        **extra,
     }
 
     # Remove None values (let Pydantic use its defaults)
@@ -238,4 +247,5 @@ class ValidationError(ValidationError):
     Provides the same interface but can be caught as jsweb.dto.ValidationError
     without exposing Pydantic to the user.
     """
+
     pass

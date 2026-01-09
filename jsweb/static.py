@@ -4,14 +4,11 @@ This module provides functionality for serving static files from the filesystem.
 
 import mimetypes
 import os
-from typing import Union
 
 from .response import HTMLResponse, Response
 
 
-def serve_static(
-    request_path: str, static_url: str, static_dir: str
-) -> Response:
+def serve_static(request_path: str, static_url: str, static_dir: str) -> Response:
     """
     Serves a static file from a directory with security checks.
 
@@ -31,7 +28,7 @@ def serve_static(
     if not request_path.startswith(static_url):
         return HTMLResponse("404 Not Found", status_code=404)
 
-    relative_path = request_path[len(static_url):].lstrip("/")
+    relative_path = request_path[len(static_url) :].lstrip("/")
 
     base_dir = os.path.abspath(static_dir)
     full_path = os.path.normpath(os.path.join(base_dir, relative_path))
@@ -45,7 +42,7 @@ def serve_static(
     try:
         with open(full_path, "rb") as f:
             content = f.read()
-    except IOError:
+    except OSError:
         return HTMLResponse("500 Internal Server Error", status_code=500)
 
     content_type = mimetypes.guess_type(full_path)[0] or "application/octet-stream"

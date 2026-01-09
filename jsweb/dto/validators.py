@@ -2,11 +2,17 @@
 Custom validators for jsweb DTOs - wraps Pydantic's validators
 """
 
-from pydantic import field_validator as pydantic_field_validator, model_validator as pydantic_model_validator
-from typing import Any, Callable
+from collections.abc import Callable
+
+from pydantic import (
+    field_validator as pydantic_field_validator,
+)
+from pydantic import (
+    model_validator as pydantic_model_validator,
+)
 
 
-def validator(field_name: str, *, mode: str = 'after', **kwargs) -> Callable:
+def validator(field_name: str, *, mode: str = "after", **kwargs) -> Callable:
     """
     Field validator decorator - jsweb API wrapping Pydantic's field_validator.
 
@@ -26,13 +32,15 @@ def validator(field_name: str, *, mode: str = 'after', **kwargs) -> Callable:
                     raise ValueError('Invalid email format')
                 return value.lower()  # Normalize to lowercase
     """
+
     def decorator(func: Callable) -> Callable:
         # Use Pydantic's field_validator internally
         return pydantic_field_validator(field_name, mode=mode, **kwargs)(func)
+
     return decorator
 
 
-def root_validator(*, mode: str = 'after', **kwargs) -> Callable:
+def root_validator(*, mode: str = "after", **kwargs) -> Callable:
     """
     Model-level validator decorator - validates entire model.
 
@@ -52,7 +60,9 @@ def root_validator(*, mode: str = 'after', **kwargs) -> Callable:
                     raise ValueError('end_date must be after start_date')
                 return values
     """
+
     def decorator(func: Callable) -> Callable:
         # Use Pydantic's model_validator internally
         return pydantic_model_validator(mode=mode, **kwargs)(func)
+
     return decorator

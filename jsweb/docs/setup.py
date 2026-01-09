@@ -5,17 +5,18 @@ This module provides one-line setup functions for enabling
 automatic API documentation with Swagger UI and ReDoc.
 """
 
-from typing import Dict, List, Any, Optional
-from .schema_builder import OpenAPISchemaBuilder
-from .ui_handlers import (
-    set_builder,
-    openapi_json_handler,
-    swagger_ui_handler,
-    redoc_handler,
-    rapidoc_handler
-)
+from typing import Any
+
 from .introspection import introspect_app_routes
 from .registry import openapi_registry
+from .schema_builder import OpenAPISchemaBuilder
+from .ui_handlers import (
+    openapi_json_handler,
+    rapidoc_handler,
+    redoc_handler,
+    set_builder,
+    swagger_ui_handler,
+)
 
 
 def configure_openapi(
@@ -23,10 +24,10 @@ def configure_openapi(
     version: str = "1.0.0",
     description: str = "",
     terms_of_service: str = None,
-    contact: Dict[str, str] = None,
-    license_info: Dict[str, str] = None,
-    servers: List[Dict[str, str]] = None,
-    tags: List[Dict[str, Any]] = None
+    contact: dict[str, str] = None,
+    license_info: dict[str, str] = None,
+    servers: list[dict[str, str]] = None,
+    tags: list[dict[str, Any]] = None,
 ) -> OpenAPISchemaBuilder:
     """
     Configure OpenAPI documentation settings.
@@ -72,7 +73,7 @@ def configure_openapi(
         contact=contact,
         license_info=license_info,
         servers=servers,
-        tags=tags
+        tags=tags,
     )
 
     set_builder(builder)
@@ -89,8 +90,8 @@ def setup_openapi_docs(
     redoc_url: str = "/redoc",
     rapidoc_url: str = None,
     openapi_url: str = "/openapi.json",
-    security_schemes: Dict[str, Dict] = None,
-    **kwargs
+    security_schemes: dict[str, dict] = None,
+    **kwargs,
 ):
     """
     One-line setup for OpenAPI documentation.
@@ -138,12 +139,7 @@ def setup_openapi_docs(
             app.run(port=8000)
     """
     # Configure OpenAPI schema builder
-    configure_openapi(
-        title=title,
-        version=version,
-        description=description,
-        **kwargs
-    )
+    configure_openapi(title=title, version=version, description=description, **kwargs)
 
     # Register security schemes if provided
     if security_schemes:
@@ -167,7 +163,7 @@ def setup_openapi_docs(
         app.route(rapidoc_url, methods=["GET"])(rapidoc_handler)
 
     # Print documentation URLs (ASCII-safe for Windows terminals)
-    print(f"\n[*] OpenAPI documentation enabled:")
+    print("\n[*] OpenAPI documentation enabled:")
     if docs_url:
         print(f"   > Swagger UI: {docs_url}")
     if redoc_url:
@@ -185,8 +181,8 @@ def add_security_scheme(
     type: str,
     scheme: str = None,
     bearer_format: str = None,
-    flows: Dict = None,
-    **kwargs
+    flows: dict = None,
+    **kwargs,
 ):
     """
     Add a security scheme to the OpenAPI spec.
@@ -232,10 +228,7 @@ def add_security_scheme(
             }
         )
     """
-    security_scheme = {
-        "type": type,
-        **kwargs
-    }
+    security_scheme = {"type": type, **kwargs}
 
     if scheme:
         security_scheme["scheme"] = scheme

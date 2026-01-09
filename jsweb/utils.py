@@ -1,5 +1,6 @@
 import socket
 
+
 def get_local_ip():
     """
     Attempts to determine the local IP address of the machine.
@@ -17,10 +18,10 @@ def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         # Doesn't actually send data, just connects to find the best interface
-        s.connect(('10.255.255.255', 1))
+        s.connect(("10.255.255.255", 1))
         ip = s.getsockname()[0]
     except Exception:
-        ip = '127.0.0.1'
+        ip = "127.0.0.1"
     finally:
         s.close()
     return ip

@@ -1,10 +1,13 @@
 import logging
+
 import uvicorn
+
 from jsweb.logging_config import setup_logging
 from jsweb.utils import get_local_ip
 
 setup_logging()
 logger = logging.getLogger(__name__)
+
 
 def run(app, host="127.0.0.1", port=8000, reload=False):
     """
@@ -31,10 +34,4 @@ def run(app, host="127.0.0.1", port=8000, reload=False):
         logger.info(f"[*] JsWeb server running on http://{host}:{port}")
     logger.info("[*] Press Ctrl+C to stop the server")
 
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_config=None,
-        reload=reload
-    )
+    uvicorn.run(app, host=host, port=port, log_config=None, reload=reload)

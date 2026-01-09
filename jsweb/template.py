@@ -4,6 +4,7 @@ This module provides a simple interface for rendering Jinja2 templates.
 It manages a global Jinja2 environment and provides functions for rendering
 templates and adding custom filters.
 """
+
 import os
 
 from jinja2 import Environment, FileSystemLoader
@@ -24,7 +25,9 @@ def get_env():
     """
     global _env
     if _env is None:
-        _env = Environment(loader=FileSystemLoader(os.path.join(os.getcwd(), "templates")))
+        _env = Environment(
+            loader=FileSystemLoader(os.path.join(os.getcwd(), "templates"))
+        )
     return _env
 
 

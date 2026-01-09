@@ -57,9 +57,7 @@ dev = [
     "black>=24.0",
     "isort>=5.12",
     # Linting
-    "flake8>=7.0",
-    "flake8-bugbear>=23.0",
-    "flake8-comprehensions>=3.14",
+    "ruff>=0.4",
     # Type checking
     "mypy>=1.7",
     # Security scanning
@@ -76,8 +74,8 @@ jsweb = "jsweb.cli:cli"
 
 [project.urls]
 Documentation = "https://jsweb-framework.site/"
-Homepage = "https://github.com/Jones-peter/jsweb"
-"Bug Tracker" = "https://github.com/Jones-peter/jsweb/issues"
+Homepage = "https://github.com/Jsweb-Tech/jsweb"
+"Bug Tracker" = "https://github.com/Jsweb-Tech/jsweb/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -100,3 +98,96 @@ jsweb = [
     "admin/templates/*.html",
     "admin/static/*"
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["Tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --strict-markers --tb=short --cov=jsweb --cov-report=html --cov-report=term-missing"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Tests that take a long time to run",
+    "asyncio: Async tests"
+]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["jsweb"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "@abstractmethod"
+]
+precision = 2
+skip_covered = false
+skip_empty = true
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | venv
+  | build
+  | dist
+  | __pycache__
+)/
+'''
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"  # adjust if needed
+fix = false
+
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".venv",
+    "venv",
+]
+
+# Linter configuration
+[tool.ruff.lint]
+# Enable important rule sets
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "B",   # bugbear
+    "I",   # import sorting (replaces isort)
+    "UP",  # pyupgrade
+]
+
+# Ignore noise & Black conflicts
+ignore = [
+    "E203",  # Black-compatible
+    "E501",  # Line length handled by Black
+]
+
+# Per-file exceptions (framework-friendly)
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "F403"]
+"Tests/*" = ["F401", "B007", "E731"]

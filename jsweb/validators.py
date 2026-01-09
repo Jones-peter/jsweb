@@ -4,6 +4,7 @@ This module provides a collection of standard validators for use with forms.
 Each validator is a callable class that raises a `ValidationError` if the
 field's data does not meet the required criteria.
 """
+
 import re
 
 
@@ -90,7 +91,9 @@ class Length:
             elif self.min == -1:
                 message = f"Field cannot be longer than {self.max} characters."
             else:
-                message = f"Field must be between {self.min} and {self.max} characters long."
+                message = (
+                    f"Field must be between {self.min} and {self.max} characters long."
+                )
             raise ValidationError(message)
 
 
@@ -116,8 +119,8 @@ class EqualTo:
         """
         try:
             other = form[self.fieldname]
-        except KeyError:
-            raise ValidationError(f"Invalid field name '{self.fieldname}'.")
+        except KeyError as err:
+            raise ValidationError(f"Invalid field name '{self.fieldname}'.") from err
         if field.data != other.data:
             message = self.message
             if message is None:
@@ -170,14 +173,14 @@ class FileAllowed:
         if not field.data:
             return
 
-        filename = getattr(field.data, 'filename', None)
+        filename = getattr(field.data, "filename", None)
         if not filename:
             raise ValidationError("Invalid file data.")
 
-        if '.' not in filename:
-            ext = ''
+        if "." not in filename:
+            ext = ""
         else:
-            ext = filename.rsplit('.', 1)[1].lower()
+            ext = filename.rsplit(".", 1)[1].lower()
 
         if ext not in self.allowed_extensions:
             message = self.message
@@ -211,7 +214,7 @@ class FileSize:
         if not field.data:
             return
 
-        file_size = getattr(field.data, 'size', None)
+        file_size = getattr(field.data, "size", None)
         if file_size is None:
             raise ValidationError("Cannot determine file size.")
 
@@ -226,5 +229,7 @@ class FileSize:
             message = self.message
             if message is None:
                 min_kb = self.min_size / 1024
-                message = f"File size is below minimum required size of {min_kb:.2f} KB."
+                message = (
+                    f"File size is below minimum required size of {min_kb:.2f} KB."
+                )
             raise ValidationError(message)

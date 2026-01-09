@@ -2,6 +2,7 @@
 This module provides security-related helpers, abstracting underlying libraries
 for common tasks like password hashing and cache control.
 """
+
 import asyncio
 from functools import wraps
 
@@ -35,17 +36,15 @@ def never_cache(view):
         else:
             response = view(req, *args, **kwargs)
 
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
 
         return response
 
     return wrapper
 
 
-__all__ = [
-    "generate_password_hash",
-    "check_password_hash",
-    "never_cache"
-]
+__all__ = ["generate_password_hash", "check_password_hash", "never_cache"]

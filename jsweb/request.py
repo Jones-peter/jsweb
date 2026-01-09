@@ -61,7 +61,9 @@ class Request:
             RuntimeError: If the stream has already been consumed.
         """
         if self._is_stream_consumed:
-            raise RuntimeError("Stream has already been consumed. Use request.body() instead.")
+            raise RuntimeError(
+                "Stream has already been consumed. Use request.body() instead."
+            )
 
         self._is_stream_consumed = True
         while True:
@@ -96,7 +98,6 @@ class Request:
                 chunk_size = len(chunk)
                 total_size += chunk_size
 
-                
                 if total_size > MAX_REQUEST_BODY_SIZE:
                     raise ValueError(
                         f"Request body size ({total_size} bytes) exceeds maximum allowed "
@@ -144,7 +145,9 @@ class Request:
             if self.method in ("POST", "PUT", "PATCH"):
                 if "application/x-www-form-urlencoded" in content_type:
                     body_bytes = await self.body()
-                    self._form = {k: v[0] for k, v in parse_qs(body_bytes.decode()).items()}
+                    self._form = {
+                        k: v[0] for k, v in parse_qs(body_bytes.decode()).items()
+                    }
                 elif "multipart/form-data" in content_type:
                     await self._parse_multipart()
                 else:
@@ -162,7 +165,10 @@ class Request:
         """
         if self._files is None:
             content_type = self.headers.get("content-type", "")
-            if self.method in ("POST", "PUT", "PATCH") and "multipart/form-data" in content_type:
+            if (
+                self.method in ("POST", "PUT", "PATCH")
+                and "multipart/form-data" in content_type
+            ):
                 await self._parse_multipart()
             else:
                 self._files = {}
@@ -182,9 +188,9 @@ class Request:
         if not cookie_string:
             return {}
         cookies = {}
-        for cookie in cookie_string.split('; '):
-            if '=' in cookie:
-                key, value = cookie.split('=', 1)
+        for cookie in cookie_string.split("; "):
+            if "=" in cookie:
+                key, value = cookie.split("=", 1)
                 cookies[key] = value
         return cookies
 
@@ -207,8 +213,10 @@ class Request:
         )
 
         self._form = {k: v[0] if len(v) == 1 else v for k, v in form_data.lists()}
-        self._files = {k: UploadedFile(v[0]) if len(v) == 1 else [UploadedFile(f) for f in v] for k, v in
-                       files_data.lists()}
+        self._files = {
+            k: UploadedFile(v[0]) if len(v) == 1 else [UploadedFile(f) for f in v]
+            for k, v in files_data.lists()
+        }
 
 
 class UploadedFile:
@@ -267,7 +275,7 @@ class UploadedFile:
             size = self.file_storage.stream.tell()
             self.file_storage.stream.seek(current_pos)
             return size
-        except (OSError, IOError, AttributeError):
+        except (OSError, AttributeError):
             if self._cached_content is not None:
                 return len(self._cached_content)
             try:
@@ -278,4 +286,6 @@ class UploadedFile:
 
     def __repr__(self):
         """Provides a developer-friendly representation of the uploaded file."""
-        return f"<UploadedFile: {self.filename} ({self.content_type}, {self.size} bytes)>"
+        return (
+            f"<UploadedFile: {self.filename} ({self.content_type}, {self.size} bytes)>"
+        )

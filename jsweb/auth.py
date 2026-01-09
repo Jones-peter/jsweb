@@ -1,12 +1,13 @@
 import asyncio
 from functools import wraps
 
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+from itsdangerous import BadTimeSignature, SignatureExpired, URLSafeTimedSerializer
 
 from .response import redirect, url_for
 
 _serializer = None
 _user_loader = None
+
 
 def init_auth(secret_key: str, user_loader_func: callable):
     """
@@ -24,6 +25,7 @@ def init_auth(secret_key: str, user_loader_func: callable):
     _serializer = URLSafeTimedSerializer(secret_key)
     _user_loader = user_loader_func
 
+
 def login_user(response, user):
     """
     Logs a user in by creating a secure, timestamped session cookie.
@@ -38,6 +40,7 @@ def login_user(response, user):
     session_token = _serializer.dumps(user.id)
     response.set_cookie("session", session_token, httponly=True)
 
+
 def logout_user(response):
     """
     Logs a user out by deleting the session cookie.
@@ -46,6 +49,7 @@ def logout_user(response):
         response: The Response object from which the session cookie will be removed.
     """
     response.delete_cookie("session")
+
 
 def get_current_user(request):
     """
@@ -71,6 +75,7 @@ def get_current_user(request):
     except (SignatureExpired, BadTimeSignature):
         return None
 
+
 def login_required(handler: callable) -> callable:
     """
     A decorator to protect a route from unauthenticated access.
@@ -85,17 +90,20 @@ def login_required(handler: callable) -> callable:
     Returns:
         The decorated view function.
     """
+
     @wraps(handler)
     async def decorated_function(request, *args, **kwargs):
         if not request.user:
-            login_url = url_for(request, 'auth.login')
+            login_url = url_for(request, "auth.login")
             return redirect(login_url)
-        
+
         if asyncio.iscoroutinefunction(handler):
             return await handler(request, *args, **kwargs)
         else:
             return handler(request, *args, **kwargs)
+
     return decorated_function
+
 
 def admin_required(handler: callable) -> callable:
     """
@@ -111,13 +119,15 @@ def admin_required(handler: callable) -> callable:
     Returns:
         The decorated view function.
     """
+
     @wraps(handler)
     async def decorated_function(request, *args, **kwargs):
-        if not request.user or not getattr(request.user, 'is_admin', False):
-            return redirect(url_for(request, 'admin.index'))
-        
+        if not request.user or not getattr(request.user, "is_admin", False):
+            return redirect(url_for(request, "admin.index"))
+
         if asyncio.iscoroutinefunction(handler):
             return await handler(request, *args, **kwargs)
         else:
             return handler(request, *args, **kwargs)
+
     return decorated_function
